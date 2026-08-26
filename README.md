@@ -6,8 +6,9 @@ Next.js app with hardcoded login and Excel upload (no database required).
 
 ## Live deploy (Vercel)
 
-**Temporary live URL (claim to keep):** [https://temporary-prompt-cedar-pdsctj1.vercel.app](https://temporary-prompt-cedar-pdsctj1.vercel.app)  
-**Claim / keep permanent:** [Claim this deployment](https://vercel.com/claim-deployment?code=340c9a08-68b0-40b4-bdfa-d95d5bee42e4)
+**GitHub homepage URL:** [https://temporary-prompt-cedar-pdsctj1.vercel.app](https://temporary-prompt-cedar-pdsctj1.vercel.app) (claimed project)  
+**Backup temporary URL:** [https://temporary-quick-plateau-bfpxpbp.vercel.app](https://temporary-quick-plateau-bfpxpbp.vercel.app) — [claim](https://vercel.com/claim-deployment?code=42092fa5-5b62-47e5-9533-aa88e4534e37)  
+**Login:** Vin / admin123
 
 Production path: deploy the Next.js app on Vercel, linked to this GitHub repo so every push to `main` redeploys.
 
