@@ -30,6 +30,18 @@ Pure HTML / CSS / JS website. No Next.js, no database, no Vercel.
 
 The `gh-pages` branch already contains the static site files.
 
+
+## Portable single HTML file
+
+Download **[docs/Family-Finance-Portable.html](docs/Family-Finance-Portable.html)** (~900 KB).
+
+1. Save the file anywhere (Desktop, USB, email attachment).
+2. Double-click to open in Chrome / Edge / Safari.
+3. Sign in: **Vin** / **admin123**
+4. Use **Sync Excel** → choose your `Summary.xlsx`
+
+No install, no server, no Vercel. Data stays in that browser only.
+
 ## Run locally (works now, no GitHub Pages needed)
 
 ```bash
