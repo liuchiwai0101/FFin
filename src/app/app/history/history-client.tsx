@@ -29,14 +29,8 @@ export default function HistoryPage() {
   });
 
   const totalInterestEarned = filtered.reduce((sum, r) => sum + (r.interest || 0), 0);
-  const currentUserName = "Vin";
-  const currentUserTotal = historyRecords
-    .filter((r) => {
-      if (r.ownerName !== currentUserName) return false;
-      if (bankFilter !== "All" && !r.bank.toUpperCase().includes(bankFilter.toUpperCase())) return false;
-      return true;
-    })
-    .reduce((sum, r) => sum + r.amount, 0);
+  const selectedUserTotal = filtered.reduce((sum, r) => sum + r.amount, 0);
+  const selectedUserLabel = userFilter === "All" ? "All members" : userFilter;
   const avgRate =
     filtered.length > 0
       ? filtered.reduce((sum, r) => sum + (r.rate || 0), 0) / filtered.length
@@ -126,9 +120,9 @@ export default function HistoryPage() {
       {/* Metrics Row */}
       <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         <div className="card p-4">
-          <span className="text-xs font-bold uppercase text-slate-500 truncate block">Current User Total</span>
-          <p className="kpi-value mt-1 text-slate-900">{formatAmount(currentUserTotal, "HKD")}</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">{currentUserName} · historical principal</p>
+          <span className="text-xs font-bold uppercase text-slate-500 truncate block">Selected User Total</span>
+          <p className="kpi-value mt-1 text-slate-900">{formatAmount(selectedUserTotal, "HKD")}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{selectedUserLabel} · historical principal</p>
         </div>
         <div className="card p-4 bg-emerald-50/40 border-emerald-100">
           <span className="text-xs font-bold uppercase text-emerald-800 truncate block">Total Interest Earned</span>

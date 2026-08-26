@@ -38,7 +38,7 @@
         </div>
       </div>
       <div class="grid grid-3">
-        <div class="card"><span class="kpi-label">Current User Total</span><p class="kpi-value" id="kpi-volume">—</p><p class="subtitle" id="kpi-volume-note"></p></div>
+        <div class="card"><span class="kpi-label">Selected User Total</span><p class="kpi-value" id="kpi-volume">—</p><p class="subtitle" id="kpi-volume-note"></p></div>
         <div class="card" style="background:#ecfdf5;border-color:#a7f3d0;"><span class="kpi-label" style="color:#065f46;">Total Interest Earned</span><p class="kpi-value green" id="kpi-interest">—</p></div>
         <div class="card"><span class="kpi-label">Average Historical Rate</span><p class="kpi-value" id="kpi-rate">—</p></div>
       </div>
@@ -97,18 +97,12 @@
         const bv = sortType === "date" ? (b[sortKey] ? new Date(b[sortKey]).getTime() : null) : b[sortKey];
         return FFin.compare(av, bv, sortType, sortDir);
       });
-      const currentUser = FFin.USER.name;
-      const currentUserTotal = FFin.loadStore().historyItems
-        .filter((r) => {
-          if (r.ownerName !== currentUser) return false;
-          if (bankFilter !== "All" && !r.bank.toUpperCase().includes(bankFilter.toUpperCase())) return false;
-          return true;
-        })
-        .reduce((s, r) => s + r.amount, 0);
+      const selectedUser = userFilter === "All" ? "All members" : userFilter;
+      const userTotal = filtered.reduce((s, r) => s + r.amount, 0);
       const interest = filtered.reduce((s, r) => s + (r.interest || 0), 0);
       const avg = filtered.length ? filtered.reduce((s, r) => s + (r.rate || 0), 0) / filtered.length : 0;
-      document.getElementById("kpi-volume").textContent = FFin.formatAmount(currentUserTotal);
-      document.getElementById("kpi-volume-note").textContent = currentUser + " · historical principal";
+      document.getElementById("kpi-volume").textContent = FFin.formatAmount(userTotal);
+      document.getElementById("kpi-volume-note").textContent = selectedUser + " · historical principal";
       document.getElementById("kpi-interest").textContent = "+" + FFin.formatAmount(interest);
       document.getElementById("kpi-rate").textContent = FFin.formatRate(avg);
       document.getElementById("rows").innerHTML = filtered.map((r) => `
