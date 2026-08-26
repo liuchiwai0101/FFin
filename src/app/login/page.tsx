@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { loginAction } from "./actions";
 
 function LoginForm() {
   const params = useSearchParams();
@@ -12,7 +11,7 @@ function LoginForm() {
 
   return (
     <main className="auth-page">
-      <form action={loginAction} className="auth-card">
+      <form action="/api/login" method="post" className="auth-card">
         <p className="eyebrow">Family finance</p>
         <h1>Welcome back</h1>
         <p className="subtitle">Sign in with the hardcoded account, then upload Excel to load data.</p>

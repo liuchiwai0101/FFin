@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useDepositData } from "@/components/deposit-provider";
-import { uploadExcelAction } from "../actions";
 
 export default function SyncPage() {
   const router = useRouter();
@@ -21,10 +20,17 @@ export default function SyncPage() {
     setMessage("");
     startTransition(async () => {
       try {
-        const next = await uploadExcelAction(formData);
-        replaceStore(next);
+        const res = await fetch("/api/upload-excel", {
+          method: "POST",
+          body: formData,
+        });
+        const payload = await res.json();
+        if (!res.ok) {
+          throw new Error(payload.error || "Upload failed.");
+        }
+        replaceStore(payload);
         setMessage(
-          `Loaded ${next.activeItems.length} active and ${next.historyItems.length} history rows.`,
+          `Loaded ${payload.activeItems.length} active and ${payload.historyItems.length} history rows.`,
         );
         router.refresh();
       } catch (err) {
