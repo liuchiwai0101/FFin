@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SystemRole {
+  MEMBER
+  SUPPORT
+  ADMIN
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+model User {
+  id                  String                  @id @default(cuid())
+  name                String?
+  email               String                  @unique
+  passwordHash        String?
+  emailVerified       DateTime?
+  systemRole          SystemRole              @default(MEMBER)
+  currency            String                  @default("USD")
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  accounts            Account[]
+  categories          Category[]
+  transactions        Transaction[]
+  budgets             Budget[]
+  depositRecords      DepositRecord[]
+  auditEvents         AuditLog[]              @relation("AuditActor")
+  verificationTokens  EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model DepositRecord {
+  id          String    @id @default(cuid())
+  userId      String?
+  ownerName   String    // "Vin", "MA", "Miki", "BABA"
+  bank        String    // "SC", "HS", "HSBC", "BOC", "ICBC"
+  product     String    // "Time Deposit", "綠色債券", "零售債券", "機場債券", "Bond", "RMB Deposit", "Demand / Savings"
+  amount      Float     // Principal
+  rate        Float?    // Annual interest rate, e.g. 0.035
+  fromDate    DateTime?
+  toDate      DateTime?
+  months      Float?    // Tenor (months)
+  totalAmount Float?    // Principal + Interest
+  interest    Float?    // Interest
+  currency    String    @default("HKD")
+  isCurrent   Boolean   @default(true) // true = active portfolio snapshot, false = historical record
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([ownerName, isCurrent])
+  @@index([bank, isCurrent])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model Account {
+  id           String        @id @default(cuid())
+  userId       String
+  name         String
+  institution  String?
+  balance      Int           @default(0)
+  currency     String        @default("USD")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  userId       String
+  name         String
+  color        String        @default("#0f766e")
+  createdAt    DateTime      @default(now())
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@unique([userId, name])
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  userId      String
+  accountId   String
+  categoryId  String?
+  type        TransactionType
+  amount      Int
+  description String
+  occurredOn  DateTime        @db.Date
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account     Account         @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category    Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId, occurredOn])
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  userId      String
+  categoryId  String
+  month       DateTime @db.Date
+  limitAmount Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  action      String
+  entityType  String
+  entityId    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  actor       User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+}

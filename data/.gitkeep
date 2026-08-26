@@ -1,0 +1,4 @@
+# Local data directory
+#
+# Place your Summary.xlsx here for 1-click sync, or upload via /app/sync.
+# Excel and CSV files in this folder are gitignored and must never be committed.
