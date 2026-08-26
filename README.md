@@ -9,38 +9,36 @@ Pure HTML / CSS / JS website. No Next.js, no database, no Vercel.
 - Overview, Current Products, Interest History with sortable columns
 - Data stored in browser `localStorage`
 
-## Run locally
+## Fix the GitHub Pages 404
 
-Open the files directly, or serve the folder:
+`https://liuchiwai0101.github.io/FFin/` shows 404 until Pages is enabled.
+
+**Important:** this repo is currently **private**. Free GitHub Pages only works for **public** repositories (or paid GitHub Pro).
+
+### One-time setup (in GitHub UI)
+
+1. Open **https://github.com/liuchiwai0101/FFin/settings**
+2. Make the repo public (optional but required on free plan):  
+   **General → Danger Zone → Change repository visibility → Public**
+3. Open **https://github.com/liuchiwai0101/FFin/settings/pages**
+4. Under **Build and deployment**:
+   - Source: **Deploy from a branch**
+   - Branch: **`gh-pages`** / **`/` (root)**
+   - Click **Save**
+5. Wait 1–2 minutes, then open:  
+   **https://liuchiwai0101.github.io/FFin/**
+
+The `gh-pages` branch already contains the static site files.
+
+## Run locally (works now, no GitHub Pages needed)
 
 ```bash
 npx --yes serve docs -p 4173
 ```
 
-Then visit http://localhost:4173
-
-## Host on GitHub Pages (no Vercel)
-
-1. Push this repo to GitHub.
-2. Repo **Settings → Pages**:
-   - Source: **GitHub Actions**
-3. The workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) publishes the `docs/` folder.
-4. Site URL will look like: `https://<user>.github.io/FFin/`
-
-Or set Pages source to **Deploy from a branch** → `main` / `/docs`.
+Visit http://localhost:4173
 
 ## Folder
 
-```
-docs/
-  index.html
-  login.html
-  overview.html
-  current.html
-  history.html
-  sync.html
-  assets/
-    styles.css
-    app.js
-    xlsx.full.min.js
-```
+- Source on `main`: `docs/`
+- Published branch: `gh-pages` (same HTML at branch root)
