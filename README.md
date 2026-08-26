@@ -1,56 +1,56 @@
-# Family Finance (static HTML)
+# Family Finance (FFin)
 
-Pure HTML / CSS / JS website. No Next.js, no database, no Vercel.
+Next.js app with hardcoded login and Excel upload (no database required).
 
-## Features
+**Login:** `Vin` / `admin123`
 
-- Hardcoded login: **Vin** / **admin123**
-- Upload `Summary.xlsx` (sheet `Bank interest`) in the browser
-- Overview, Current Products, Interest History with sortable columns
-- Data stored in browser `localStorage`
+## Live deploy (Vercel)
 
-## Fix the GitHub Pages 404
+Production path: deploy the Next.js app on Vercel, linked to this GitHub repo so every push to `main` redeploys.
 
-`https://liuchiwai0101.github.io/FFin/` shows 404 until Pages is enabled.
+### Env vars (Vercel → Project → Settings → Environment Variables)
 
-**Important:** this repo is currently **private**. Free GitHub Pages only works for **public** repositories (or paid GitHub Pro).
+| Name | Required | Notes |
+|------|----------|--------|
+| `AUTH_SECRET` | Yes | Long random string (session cookie signing) |
+| `APP_URL` | Yes | Your production URL, e.g. `https://ffin.vercel.app` |
+| `NEXTAUTH_SECRET` | Optional | Same value as `AUTH_SECRET` if set |
+| `NEXTAUTH_URL` | Optional | Same as `APP_URL` if set |
+| `DATABASE_URL` | No | Not used — login is hardcoded; Excel is browser-only |
 
-### One-time setup (in GitHub UI)
+### Build settings
 
-1. Open **https://github.com/liuchiwai0101/FFin/settings**
-2. Make the repo public (optional but required on free plan):  
-   **General → Danger Zone → Change repository visibility → Public**
-3. Open **https://github.com/liuchiwai0101/FFin/settings/pages**
-4. Under **Build and deployment**:
-   - Source: **Deploy from a branch**
-   - Branch: **`gh-pages`** / **`/` (root)**
-   - Click **Save**
-5. Wait 1–2 minutes, then open:  
-   **https://liuchiwai0101.github.io/FFin/**
+- Framework: **Next.js** (see `vercel.json`)
+- Build command: `npm run build`
+- Install command: `npm install`
+- Prisma generate is **not** required for this app
 
-The `gh-pages` branch already contains the static site files.
+### Claim / GitHub link
 
+1. Open the claim URL from the latest temporary deploy (or import **https://github.com/liuchiwai0101/FFin** in the Vercel dashboard).
+2. Connect the GitHub repo and set Production Branch to `main`.
+3. Add the env vars above, then redeploy.
+4. Set the GitHub repo homepage to the Vercel URL (Settings → General → Website).
 
-## Portable single HTML file
+## Local Next.js
 
-Download **[docs/Family-Finance-Portable.html](docs/Family-Finance-Portable.html)** (~900 KB).
+```bash
+cp .env.example .env
+# set AUTH_SECRET and APP_URL=http://localhost:3000
+npm install
+npm run dev
+```
 
-1. Save the file anywhere (Desktop, USB, email attachment).
-2. Double-click to open in Chrome / Edge / Safari.
-3. Sign in: **Vin** / **admin123**
-4. Use **Sync Excel** → choose your `Summary.xlsx`
+Open http://localhost:3000 → Sign in → Sync Excel → upload `Summary.xlsx`.
 
-No install, no server, no Vercel. Data stays in that browser only.
+## Portable single HTML (offline)
 
-## Run locally (works now, no GitHub Pages needed)
+Download **[docs/Family-Finance-Portable.html](docs/Family-Finance-Portable.html)** (~900 KB). Open in a browser, login, upload Excel — no server.
+
+## Static docs / GitHub Pages
+
+The `docs/` folder and `gh-pages` branch are a static HTML mirror. Private repos need GitHub Pro (or a public repo) for free Pages.
 
 ```bash
 npx --yes serve docs -p 4173
 ```
-
-Visit http://localhost:4173
-
-## Folder
-
-- Source on `main`: `docs/`
-- Published branch: `gh-pages` (same HTML at branch root)

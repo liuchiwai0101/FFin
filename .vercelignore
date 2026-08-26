@@ -1,0 +1,15 @@
+.git
+.github
+.next
+docs
+site
+data
+coverage
+*.md
+!README.md
+prisma
+*.xlsx
+*.xls
+*.csv
+*.sqlite
+*.db
