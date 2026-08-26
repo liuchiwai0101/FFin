@@ -6,7 +6,7 @@ Private dashboard for bank deposits and interest history. Login is hardcoded; al
 
 - Next.js App Router + TypeScript
 - Hardcoded cookie login (`Vin` / `admin123`)
-- Excel (`.xlsx`) upload → local JSON cache under `data/`
+- Excel (`.xlsx`) upload → stored in the browser (works on Vercel)
 
 ## Local Setup
 
@@ -21,7 +21,13 @@ Private dashboard for bank deposits and interest history. Login is hardcoded; al
 
 ## Deploy (Vercel)
 
-No `DATABASE_URL` required. Set `AUTH_SECRET` (and optionally `APP_URL`) in the Vercel project. Note: uploaded Excel data is stored on the server filesystem (`data/` or `/tmp`) and may reset on cold deploys — re-upload after deploy if needed.
+No `DATABASE_URL` required. Set `AUTH_SECRET` in the Vercel project.
+
+1. Claim or link the project in Vercel (GitHub repo `liuchiwai0101/FFin`).
+2. Deploy production.
+3. Open the site → Sign in → **Sync Excel** → upload your workbook.
+
+Uploaded data stays in the visitor’s browser (`localStorage`) so serverless hosting does not need a database.
 
 ## Verification
 
