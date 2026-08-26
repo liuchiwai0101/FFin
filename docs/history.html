@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interest History · Family Finance</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <div id="app-shell"></div>
+  <main class="main space-y">
+    <div>
+      <p class="eyebrow">Historical Returns</p>
+      <h1>Interest History &amp; Matured Records</h1>
+      <p class="subtitle">Chronological audit of past term deposits, bonds, and interest payouts.</p>
+    </div>
+    <div id="empty" class="card" hidden>
+      <h2 style="margin:0 0 0.5rem;">No history loaded</h2>
+      <p class="subtitle">Upload Excel to load matured interest records.</p>
+      <p style="margin-top:1rem;"><a class="btn" href="./sync.html">Upload Excel</a></p>
+    </div>
+    <div id="panel" hidden>
+      <div class="card">
+        <div class="filters"><span class="muted" style="font-size:0.75rem;font-weight:800;text-transform:uppercase;">Member</span>
+          <button class="chip active" data-user="All">All</button>
+          <button class="chip" data-user="MA">MA</button>
+          <button class="chip" data-user="Vin">Vin</button>
+          <button class="chip" data-user="Miki">Miki</button>
+          <button class="chip" data-user="BABA">BABA</button>
+        </div>
+        <div class="filters"><span class="muted" style="font-size:0.75rem;font-weight:800;text-transform:uppercase;">Bank</span>
+          <button class="chip active" data-bank="All">All</button>
+          <button class="chip" data-bank="BOC">BOC</button>
+          <button class="chip" data-bank="HS">HS</button>
+          <button class="chip" data-bank="SC">SC</button>
+          <button class="chip" data-bank="HSBC">HSBC</button>
+          <button class="chip" data-bank="ICBC">ICBC</button>
+        </div>
+      </div>
+      <div class="grid grid-3">
+        <div class="card"><span class="kpi-label">Cumulative Matured Volume</span><p class="kpi-value" id="kpi-volume">—</p></div>
+        <div class="card" style="background:#ecfdf5;border-color:#a7f3d0;"><span class="kpi-label" style="color:#065f46;">Total Interest Earned</span><p class="kpi-value green" id="kpi-interest">—</p></div>
+        <div class="card"><span class="kpi-label">Average Historical Rate</span><p class="kpi-value" id="kpi-rate">—</p></div>
+      </div>
+      <div class="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><button data-sort="seq" data-type="number">Seq #</button></th>
+              <th><button data-sort="ownerName" data-type="string">Member</button></th>
+              <th><button data-sort="bank" data-type="string">Bank</button></th>
+              <th><button data-sort="product" data-type="string">Product / Instrument</button></th>
+              <th class="right"><button data-sort="amount" data-type="number">Principal</button></th>
+              <th class="center"><button data-sort="rate" data-type="number">Rate</button></th>
+              <th><button data-sort="fromDate" data-type="date">Tenor &amp; Dates</button></th>
+              <th class="right"><button data-sort="interest" data-type="number">Interest Earned</button></th>
+              <th class="right"><button data-sort="totalAmount" data-type="number">Total Payout</button></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <script src="./assets/app.js"></script>
+  <script>
+    if (!FFin.requireAuth()) throw new Error("auth");
+    FFin.renderShell("history");
+
+    let userFilter = "All";
+    let bankFilter = "All";
+    let sortKey = "fromDate";
+    let sortType = "date";
+    let sortDir = "asc";
+
+    function rows() {
+      return FFin.loadStore().historyItems
+        .map((r, i) => ({ ...r, seq: i + 1 }))
+        .filter((r) => {
+          if (userFilter !== "All" && r.ownerName !== userFilter) return false;
+          if (bankFilter !== "All" && !r.bank.toUpperCase().includes(bankFilter.toUpperCase())) return false;
+          return true;
+        });
+    }
+
+    function render() {
+      const all = FFin.loadStore().historyItems;
+      if (!all.length) {
+        document.getElementById("empty").hidden = false;
+        document.getElementById("panel").hidden = true;
+        return;
+      }
+      document.getElementById("empty").hidden = true;
+      document.getElementById("panel").hidden = false;
+      const filtered = rows().sort((a, b) => {
+        const av = sortType === "date" ? (a[sortKey] ? new Date(a[sortKey]).getTime() : null) : a[sortKey];
+        const bv = sortType === "date" ? (b[sortKey] ? new Date(b[sortKey]).getTime() : null) : b[sortKey];
+        return FFin.compare(av, bv, sortType, sortDir);
+      });
+      const volume = filtered.reduce((s, r) => s + r.amount, 0);
+      const interest = filtered.reduce((s, r) => s + (r.interest || 0), 0);
+      const avg = filtered.length ? filtered.reduce((s, r) => s + (r.rate || 0), 0) / filtered.length : 0;
+      document.getElementById("kpi-volume").textContent = FFin.formatAmount(volume);
+      document.getElementById("kpi-interest").textContent = "+" + FFin.formatAmount(interest);
+      document.getElementById("kpi-rate").textContent = FFin.formatRate(avg);
+      document.getElementById("rows").innerHTML = filtered.map((r) => `
+        <tr>
+          <td class="muted mono">#${r.seq}</td>
+          <td><span class="badge" style="background:#f1f5f9;color:#0f172a;">${r.ownerName}</span></td>
+          <td><strong>${r.bank}</strong></td>
+          <td>${r.product}${r.notes ? `<div class="muted" style="font-size:0.7rem;">${r.notes}</div>` : ""}</td>
+          <td class="right mono"><strong>${FFin.formatAmount(r.amount, r.currency)}</strong></td>
+          <td class="center"><span class="badge">${FFin.formatRate(r.rate)}</span></td>
+          <td>${FFin.formatDate(r.fromDate)} → ${FFin.formatDate(r.toDate)}${r.months ? `<div class="muted" style="font-size:0.7rem;">${r.months} Months</div>` : ""}</td>
+          <td class="right mono green">+${FFin.formatAmount(r.interest || 0, r.currency)}</td>
+          <td class="right mono"><strong>${FFin.formatAmount(r.totalAmount || r.amount + (r.interest || 0), r.currency)}</strong></td>
+        </tr>
+      `).join("");
+      document.querySelectorAll("th button").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.sort === sortKey);
+      });
+    }
+
+    document.querySelectorAll("[data-user]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        userFilter = btn.dataset.user;
+        document.querySelectorAll("[data-user]").forEach((b) => b.classList.toggle("active", b === btn));
+        render();
+      });
+    });
+    document.querySelectorAll("[data-bank]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        bankFilter = btn.dataset.bank;
+        document.querySelectorAll("[data-bank]").forEach((b) => b.classList.toggle("active", b === btn));
+        render();
+      });
+    });
+    document.querySelectorAll("th button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (sortKey === btn.dataset.sort) sortDir = sortDir === "asc" ? "desc" : "asc";
+        else {
+          sortKey = btn.dataset.sort;
+          sortType = btn.dataset.type;
+          sortDir = sortType === "number" || sortType === "date" ? "desc" : "asc";
+        }
+        render();
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>

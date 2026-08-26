@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in · Family Finance</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <main class="auth-page">
+    <form class="auth-card" id="login-form">
+      <p class="eyebrow">Family finance</p>
+      <h1>Welcome back</h1>
+      <p class="subtitle">Sign in, then upload Excel to load data.</p>
+      <div id="error" class="error" hidden>That account or password was not recognized.</div>
+      <label>
+        Account / Email
+        <input name="email" required autocomplete="username" value="Vin" placeholder="Vin" />
+      </label>
+      <label>
+        Password
+        <input name="password" type="password" required autocomplete="current-password" placeholder="admin123" />
+      </label>
+      <button class="btn" style="width:100%;margin-top:1rem;" type="submit">Sign in</button>
+      <p class="subtitle" style="margin-top:0.85rem;">Hardcoded login: <strong>Vin</strong> / <strong>admin123</strong></p>
+      <p class="subtitle"><a href="./index.html">Back to home</a></p>
+    </form>
+  </main>
+  <script src="./assets/app.js"></script>
+  <script>
+    if (FFin.isLoggedIn()) location.href = "./overview.html";
+    document.getElementById("login-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.currentTarget);
+      const ok = FFin.login(fd.get("email"), fd.get("password"));
+      if (!ok) {
+        document.getElementById("error").hidden = false;
+        return;
+      }
+      location.href = "./overview.html";
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sync Excel · Family Finance</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <div id="app-shell"></div>
+  <main class="main space-y">
+    <div>
+      <p class="eyebrow">Data Management</p>
+      <h1>Upload &amp; Sync Excel Sheet</h1>
+      <p class="subtitle">Upload <code>Summary.xlsx</code> (sheet <strong>Bank interest</strong>). Data stays in this browser until you upload again.</p>
+      <p class="subtitle" id="synced-at"></p>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="card"><span class="kpi-label">Active Portfolio Records</span><p class="kpi-value" id="active-count">0</p></div>
+      <div class="card"><span class="kpi-label">Historical Interest Records</span><p class="kpi-value" id="history-count">0</p></div>
+      <div class="card" style="background:#f0fdfa;border-color:#ccfbf1;"><span class="kpi-label" style="color:#115e59;">Total Loaded Rows</span><p class="kpi-value" id="total-count">0</p></div>
+    </div>
+
+    <div id="empty" class="warn" hidden>No data loaded yet. Upload your Excel file below.</div>
+    <div id="msg" class="ok" hidden></div>
+    <div id="err" class="error" hidden></div>
+
+    <div class="card">
+      <h2 style="margin:0 0 0.35rem;font-size:1rem;">Upload Excel File</h2>
+      <p class="subtitle">This replaces all currently loaded rows.</p>
+      <form id="upload-form" style="margin-top:1rem;display:grid;gap:0.75rem;">
+        <input type="file" name="file" accept=".xlsx,.xls" required />
+        <button class="btn" type="submit">Upload &amp; Load Data</button>
+      </form>
+      <button class="btn-ghost" type="button" id="clear-btn" style="margin-top:0.75rem;">Clear loaded data</button>
+    </div>
+  </main>
+
+  <script src="./assets/xlsx.full.min.js"></script>
+  <script src="./assets/app.js"></script>
+  <script>
+    if (!FFin.requireAuth()) throw new Error("auth");
+    FFin.renderShell("sync");
+
+    function refresh() {
+      const store = FFin.loadStore();
+      document.getElementById("active-count").textContent = store.activeItems.length;
+      document.getElementById("history-count").textContent = store.historyItems.length;
+      document.getElementById("total-count").textContent = store.activeItems.length + store.historyItems.length;
+      document.getElementById("synced-at").textContent = store.syncedAt
+        ? "Last loaded: " + new Date(store.syncedAt).toLocaleString()
+        : "";
+      document.getElementById("empty").hidden = store.activeItems.length + store.historyItems.length > 0;
+    }
+
+    refresh();
+
+    document.getElementById("upload-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      document.getElementById("err").hidden = true;
+      document.getElementById("msg").hidden = true;
+      const file = e.currentTarget.file.files[0];
+      if (!file) return;
+      try {
+        const buffer = await file.arrayBuffer();
+        const wb = XLSX.read(buffer, { type: "array" });
+        const parsed = FFin.parseWorkbook(wb);
+        const store = {
+          syncedAt: new Date().toISOString(),
+          activeItems: parsed.activeItems,
+          historyItems: parsed.historyItems,
+        };
+        FFin.saveStore(store);
+        refresh();
+        const msg = document.getElementById("msg");
+        msg.hidden = false;
+        msg.innerHTML = `Loaded ${store.activeItems.length} active and ${store.historyItems.length} history rows. <a href="./overview.html">Open Overview</a>`;
+      } catch (err) {
+        const box = document.getElementById("err");
+        box.hidden = false;
+        box.textContent = err.message || "Could not parse Excel file.";
+      }
+    });
+
+    document.getElementById("clear-btn").addEventListener("click", () => {
+      FFin.clearStore();
+      refresh();
+      const msg = document.getElementById("msg");
+      msg.hidden = false;
+      msg.textContent = "Cleared loaded Excel data from this browser.";
+    });
+  </script>
+</body>
+</html>

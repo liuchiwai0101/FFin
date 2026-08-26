@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Overview · Family Finance</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <div id="app-shell"></div>
+  <main class="main space-y" id="content"></main>
+  <script src="./assets/app.js"></script>
+  <script>
+    if (!FFin.requireAuth()) throw new Error("auth");
+    FFin.renderShell("overview");
+
+    const store = FFin.loadStore();
+    if (!store.activeItems.length && !store.historyItems.length) {
+      document.getElementById("content").innerHTML = `
+        <div class="card">
+          <h1>No Excel data loaded</h1>
+          <p class="subtitle">Upload your bank interest workbook to populate this overview.</p>
+          <p style="margin-top:1rem;"><a class="btn" href="./sync.html">Upload Excel</a></p>
+        </div>`;
+    } else {
+      const active = [...store.activeItems].sort((a, b) => b.amount - a.amount);
+      const history = [...store.historyItems];
+      const totalPrincipal = active.reduce((s, r) => s + r.amount, 0);
+      const totalActiveInterest = active.reduce((s, r) => s + (r.interest || 0), 0);
+      const totalHistoryInterest = history.reduce((s, r) => s + (r.interest || 0), 0);
+      const weightedAvgRate = totalPrincipal > 0
+        ? active.reduce((s, r) => s + r.amount * (r.rate || 0), 0) / totalPrincipal
+        : 0;
+
+      const users = ["MA", "Vin", "Miki", "BABA"];
+      const banks = ["SC", "HS", "HSBC", "ICBC", "BOC"];
+      const bankUserMatrix = {};
+      const userTotals = { MA: 0, Vin: 0, Miki: 0, BABA: 0 };
+      banks.forEach((b) => { bankUserMatrix[b] = { MA: 0, Vin: 0, Miki: 0, BABA: 0, total: 0 }; });
+      active.forEach((r) => {
+        const b = FFin.normalizeBank(r.bank);
+        const u = r.ownerName;
+        if (bankUserMatrix[b] && bankUserMatrix[b][u] !== undefined) {
+          bankUserMatrix[b][u] += r.amount;
+          bankUserMatrix[b].total += r.amount;
+        }
+        if (userTotals[u] !== undefined) userTotals[u] += r.amount;
+      });
+
+      const userInterestMatrix = {};
+      const bankInterestTotals = { BOC: 0, HS: 0, SC: 0, HSBC: 0, ICBC: 0, total: 0 };
+      users.forEach((u) => { userInterestMatrix[u] = { BOC: 0, HS: 0, SC: 0, HSBC: 0, ICBC: 0, total: 0 }; });
+      [...active, ...history].forEach((r) => {
+        const b = FFin.normalizeBank(r.bank);
+        const u = r.ownerName;
+        const interest = r.interest || 0;
+        if (userInterestMatrix[u] && userInterestMatrix[u][b] !== undefined) {
+          userInterestMatrix[u][b] += interest;
+          userInterestMatrix[u].total += interest;
+        }
+        if (bankInterestTotals[b] !== undefined) {
+          bankInterestTotals[b] += interest;
+          bankInterestTotals.total += interest;
+        }
+      });
+
+      const bankNames = {
+        SC: "Standard Chartered",
+        HS: "Hang Seng",
+        HSBC: "HSBC / MA HSBC",
+        ICBC: "ICBC Asia",
+        BOC: "Bank of China",
+      };
+
+      const bankRows = banks.map((b) => {
+        const row = bankUserMatrix[b];
+        const pct = totalPrincipal > 0 ? (row.total / totalPrincipal) * 100 : 0;
+        return `<tr>
+          <td><strong>${b}</strong> <span class="muted">${bankNames[b] || ""}</span></td>
+          <td class="right mono">${row.MA ? FFin.formatAmount(row.MA) : "—"}</td>
+          <td class="right mono">${row.Vin ? FFin.formatAmount(row.Vin) : "—"}</td>
+          <td class="right mono">${row.Miki ? FFin.formatAmount(row.Miki) : "—"}</td>
+          <td class="right mono">${row.BABA ? FFin.formatAmount(row.BABA) : "—"}</td>
+          <td class="right mono"><strong>${FFin.formatAmount(row.total)}</strong></td>
+          <td class="right"><span class="badge">${pct.toFixed(1)}%</span></td>
+        </tr>`;
+      }).join("");
+
+      const interestRows = users.map((u) => {
+        const row = userInterestMatrix[u];
+        return `<tr>
+          <td><strong>${u}</strong></td>
+          <td class="right mono">${row.BOC ? "+" + FFin.formatAmount(row.BOC) : "—"}</td>
+          <td class="right mono">${row.HS ? "+" + FFin.formatAmount(row.HS) : "—"}</td>
+          <td class="right mono">${row.SC ? "+" + FFin.formatAmount(row.SC) : "—"}</td>
+          <td class="right mono">${row.HSBC ? "+" + FFin.formatAmount(row.HSBC) : "—"}</td>
+          <td class="right mono">${row.ICBC ? "+" + FFin.formatAmount(row.ICBC) : "—"}</td>
+          <td class="right mono green">+${FFin.formatAmount(row.total)}</td>
+        </tr>`;
+      }).join("");
+
+      document.getElementById("content").innerHTML = `
+        <div>
+          <p class="eyebrow">Overview</p>
+          <h1>Family Portfolio Snapshot</h1>
+          <p class="subtitle">Built from your latest Excel upload${store.syncedAt ? " · " + new Date(store.syncedAt).toLocaleString() : ""}.</p>
+        </div>
+        <div class="grid grid-3">
+          <div class="card"><span class="kpi-label">Total Active Principal</span><p class="kpi-value">${FFin.formatAmount(totalPrincipal)}</p><p class="subtitle">${active.length} active holdings</p></div>
+          <div class="card" style="background:#ecfdf5;border-color:#a7f3d0;"><span class="kpi-label" style="color:#065f46;">Expected Active Interest</span><p class="kpi-value green">+${FFin.formatAmount(totalActiveInterest)}</p><p class="subtitle">Weighted avg ${FFin.formatRate(weightedAvgRate)}</p></div>
+          <div class="card"><span class="kpi-label">Cumulative Historical Interest</span><p class="kpi-value">+${FFin.formatAmount(totalHistoryInterest)}</p><p class="subtitle">${history.length} matured records</p></div>
+        </div>
+        <div class="card">
+          <h2 style="margin:0 0 0.35rem;font-size:1.05rem;">Bank Distribution Matrix</h2>
+          <p class="subtitle">Active principal by bank and member</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Bank</th><th class="right">MA</th><th class="right">Vin</th><th class="right">Miki</th><th class="right">BABA</th><th class="right">Total</th><th class="right">% Share</th></tr></thead>
+              <tbody>${bankRows}</tbody>
+              <tfoot><tr>
+                <td><strong>Grand Total</strong></td>
+                <td class="right mono">${FFin.formatAmount(userTotals.MA)}</td>
+                <td class="right mono">${FFin.formatAmount(userTotals.Vin)}</td>
+                <td class="right mono">${FFin.formatAmount(userTotals.Miki)}</td>
+                <td class="right mono">${FFin.formatAmount(userTotals.BABA)}</td>
+                <td class="right mono"><strong>${FFin.formatAmount(totalPrincipal)}</strong></td>
+                <td class="right">100.0%</td>
+              </tr></tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <h2 style="margin:0 0 0.35rem;font-size:1.05rem;">Total Interest by User &amp; Bank</h2>
+          <p class="subtitle">Active + historical interest</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Member</th><th class="right">BOC</th><th class="right">HS</th><th class="right">SC</th><th class="right">HSBC</th><th class="right">ICBC</th><th class="right">Total</th></tr></thead>
+              <tbody>${interestRows}</tbody>
+              <tfoot><tr>
+                <td><strong>Grand Total</strong></td>
+                <td class="right mono">+${FFin.formatAmount(bankInterestTotals.BOC)}</td>
+                <td class="right mono">+${FFin.formatAmount(bankInterestTotals.HS)}</td>
+                <td class="right mono">+${FFin.formatAmount(bankInterestTotals.SC)}</td>
+                <td class="right mono">+${FFin.formatAmount(bankInterestTotals.HSBC)}</td>
+                <td class="right mono">+${FFin.formatAmount(bankInterestTotals.ICBC)}</td>
+                <td class="right mono green">+${FFin.formatAmount(bankInterestTotals.total)}</td>
+              </tr></tfoot>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

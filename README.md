@@ -1,38 +1,46 @@
-# Family Finance
+# Family Finance (static HTML)
 
-Private dashboard for bank deposits and interest history. Login is hardcoded; all numbers come from Excel upload (no database).
+Pure HTML / CSS / JS website. No Next.js, no database, no Vercel.
 
-## Stack
+## Features
 
-- Next.js App Router + TypeScript
-- Hardcoded cookie login (`Vin` / `admin123`)
-- Excel (`.xlsx`) upload → stored in the browser (works on Vercel)
+- Hardcoded login: **Vin** / **admin123**
+- Upload `Summary.xlsx` (sheet `Bank interest`) in the browser
+- Overview, Current Products, Interest History with sortable columns
+- Data stored in browser `localStorage`
 
-## Local Setup
+## Run locally
 
-1. Copy `.env.example` to `.env` and set `AUTH_SECRET`.
-2. Install and run:
-   ```bash
-   npm install
-   npm run dev
-   ```
-3. Sign in with **Vin** / **admin123**.
-4. Open **Sync Excel** and upload `Summary.xlsx` (sheet `Bank interest`).
-
-## Deploy (Vercel)
-
-No `DATABASE_URL` required. Set `AUTH_SECRET` in the Vercel project.
-
-1. Claim or link the project in Vercel (GitHub repo `liuchiwai0101/FFin`).
-2. Deploy production.
-3. Open the site → Sign in → **Sync Excel** → upload your workbook.
-
-Uploaded data stays in the visitor’s browser (`localStorage`) so serverless hosting does not need a database.
-
-## Verification
+Open the files directly, or serve the folder:
 
 ```bash
-npm run lint
-npm test
-npm run build
+npx --yes serve docs -p 4173
+```
+
+Then visit http://localhost:4173
+
+## Host on GitHub Pages (no Vercel)
+
+1. Push this repo to GitHub.
+2. Repo **Settings → Pages**:
+   - Source: **GitHub Actions**
+3. The workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) publishes the `docs/` folder.
+4. Site URL will look like: `https://<user>.github.io/FFin/`
+
+Or set Pages source to **Deploy from a branch** → `main` / `/docs`.
+
+## Folder
+
+```
+docs/
+  index.html
+  login.html
+  overview.html
+  current.html
+  history.html
+  sync.html
+  assets/
+    styles.css
+    app.js
+    xlsx.full.min.js
 ```
