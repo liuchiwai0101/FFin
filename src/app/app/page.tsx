@@ -1,15 +1,34 @@
+"use client";
+
 import Link from "next/link";
 import { SortableTable } from "@/components/sortable-table";
-import { loadDepositRecords } from "@/lib/deposit-store";
+import { useDepositData } from "@/components/deposit-provider";
 import { formatAmount, formatRate } from "@/lib/finance";
 
-export const dynamic = "force-dynamic";
-
-export default async function OverviewPage() {
-  const activeRecords = loadDepositRecords({ isCurrent: true }).sort((a, b) => b.amount - a.amount);
-  const historyRecords = loadDepositRecords({ isCurrent: false }).sort(
+export default function OverviewPage() {
+  const { ready, activeRecords: activeRaw, historyRecords: historyRaw, store } = useDepositData();
+  const activeRecords = [...activeRaw].sort((a, b) => b.amount - a.amount);
+  const historyRecords = [...historyRaw].sort(
     (a, b) => (b.fromDate?.getTime() ?? 0) - (a.fromDate?.getTime() ?? 0),
   );
+
+  if (!ready) {
+    return <div className="card p-6 text-sm text-slate-500">Loading dashboard…</div>;
+  }
+
+  if (!store.activeItems.length && !store.historyItems.length) {
+    return (
+      <div className="card p-8 max-w-xl space-y-3">
+        <h1 className="text-2xl font-bold text-slate-900">No Excel data loaded</h1>
+        <p className="text-sm text-slate-600">
+          Upload your bank interest workbook to populate this overview.
+        </p>
+        <Link className="button inline-flex" href="/app/sync">
+          Upload Excel
+        </Link>
+      </div>
+    );
+  }
 
   // Total metrics
   const totalPrincipal = activeRecords.reduce((sum, r) => sum + r.amount, 0);

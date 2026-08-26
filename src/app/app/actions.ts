@@ -29,8 +29,19 @@ export async function uploadExcelAction(formData: FormData) {
     throw new Error("Could not parse data from the uploaded file. Please ensure it is a valid Summary.xlsx file.");
   }
 
-  syncItemsToStore(parsed);
+  // Best-effort server cache (works locally; ephemeral on serverless).
+  try {
+    syncItemsToStore(parsed);
+  } catch {
+    // Browser localStorage is the durable source on the live web app.
+  }
   refreshDepositPaths();
+
+  return {
+    syncedAt: new Date().toISOString(),
+    activeItems: parsed.activeItems,
+    historyItems: parsed.historyItems,
+  };
 }
 
 export async function syncExcelAction() {
