@@ -11,7 +11,7 @@ export default function Home() {
         <p className="eyebrow">Personal &amp; Family Wealth</p>
         <h1>See the full picture. Plan the next chapter.</h1>
         <p className="hero-copy">
-          A private dashboard for accounts, cash flow, category spending, and budget targets.
+          Sign in, upload your bank interest Excel sheet, and browse current products and history — no database required.
         </p>
         <div className="flex gap-3">
           <Link className="button" href="/login">
@@ -21,16 +21,16 @@ export default function Home() {
       </section>
       <section className="feature-grid">
         <div>
-          <strong>Private by design</strong>
-          <p>Secure, authenticated financial management.</p>
+          <strong>Hardcoded login</strong>
+          <p>Simple private access with Vin / admin123.</p>
         </div>
         <div>
-          <strong>Shared clarity</strong>
-          <p>Accounts, activity, and budgets in one view.</p>
+          <strong>Excel-driven</strong>
+          <p>Upload Summary.xlsx anytime to refresh every table.</p>
         </div>
         <div>
-          <strong>Actionable insights</strong>
-          <p>Track cash flow, net worth, and category progress in real time.</p>
+          <strong>No database</strong>
+          <p>Dashboard data lives only from your latest upload.</p>
         </div>
       </section>
     </main>

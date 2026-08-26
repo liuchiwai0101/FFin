@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { SortableTable } from "@/components/sortable-table";
-import { db } from "@/lib/db";
+import { loadDepositRecords } from "@/lib/deposit-store";
 import { formatAmount, formatRate } from "@/lib/finance";
 
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
-  const [activeRecords, historyRecords] = await Promise.all([
-    db.depositRecord.findMany({ where: { isCurrent: true }, orderBy: { amount: "desc" } }),
-    db.depositRecord.findMany({ where: { isCurrent: false }, orderBy: { fromDate: "desc" } }),
-  ]);
+  const activeRecords = loadDepositRecords({ isCurrent: true }).sort((a, b) => b.amount - a.amount);
+  const historyRecords = loadDepositRecords({ isCurrent: false }).sort(
+    (a, b) => (b.fromDate?.getTime() ?? 0) - (a.fromDate?.getTime() ?? 0),
+  );
 
   // Total metrics
   const totalPrincipal = activeRecords.reduce((sum, r) => sum + r.amount, 0);

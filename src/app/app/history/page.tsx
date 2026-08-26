@@ -1,5 +1,5 @@
 import { SortableTable } from "@/components/sortable-table";
-import { db } from "@/lib/db";
+import { loadDepositRecords } from "@/lib/deposit-store";
 import { formatAmount, formatDate, formatRate } from "@/lib/finance";
 import { createDepositRecord, deleteDepositRecord } from "../actions";
 
@@ -15,10 +15,9 @@ export default async function HistoryPage({
   const bankFilter = params.bank || "All";
   const searchFilter = (params.search || "").toLowerCase();
 
-  const allRecords = await db.depositRecord.findMany({
-    where: { isCurrent: false },
-    orderBy: { fromDate: "asc" },
-  });
+  const allRecords = loadDepositRecords({ isCurrent: false }).sort(
+    (a, b) => (a.fromDate?.getTime() ?? 0) - (b.fromDate?.getTime() ?? 0),
+  );
 
   const filtered = allRecords.filter((r) => {
     if (userFilter !== "All" && r.ownerName !== userFilter) return false;

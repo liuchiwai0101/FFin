@@ -8,8 +8,9 @@ export default async function MemberLayout({ children }: { children: React.React
 
   return (
     <div className="app-shell">
-      <AppNav userName={user.name} systemRole={user.systemRole} />
+      <AppNav userName={user.name} />
       <main className="app-main">{children}</main>
     </div>
   );
 }
+

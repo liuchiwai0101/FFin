@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import * as xlsx from "xlsx";
-import { db } from "@/lib/db";
+import { saveDepositStore } from "@/lib/deposit-store";
 
 export interface DepositItem {
   id?: string;
@@ -138,7 +138,7 @@ export function parseExcelBuffer(buffer: Buffer) {
 }
 
 export function getDefaultExcelPath() {
-  if (process.env.EXCEL_PATH && fs.existsSync(process.env.EXCEL_PATH)) {
+  if (process.env.EXCEL_PATH) {
     return process.env.EXCEL_PATH;
   }
   return path.join(process.cwd(), "data", "Summary.xlsx");
@@ -147,46 +147,30 @@ export function getDefaultExcelPath() {
 export function parseExcelFile(filePath?: string) {
   const targetPath = filePath || getDefaultExcelPath();
 
-  if (!fs.existsSync(targetPath)) {
+  if (!fs.existsSync(/*turbopackIgnore: true*/ targetPath)) {
     return null;
   }
 
-  const wb = xlsx.readFile(targetPath);
+  const wb = xlsx.readFile(/*turbopackIgnore: true*/ targetPath);
   return parseWorkbook(wb);
 }
 
-export async function syncItemsToDatabase(items: { activeItems: DepositItem[]; historyItems: DepositItem[] }) {
-  const { activeItems, historyItems } = items;
-  const allItems = [...activeItems, ...historyItems];
-
-  // Clear existing deposit records and re-insert
-  await db.$executeRawUnsafe(`DELETE FROM "DepositRecord";`);
-
-  for (const item of allItems) {
-    await db.depositRecord.create({
-      data: {
-        ownerName: item.ownerName,
-        bank: item.bank,
-        product: item.product,
-        amount: item.amount,
-        rate: item.rate,
-        fromDate: item.fromDate ? new Date(`${item.fromDate}T00:00:00.000Z`) : null,
-        toDate: item.toDate ? new Date(`${item.toDate}T00:00:00.000Z`) : null,
-        months: item.months,
-        totalAmount: item.totalAmount,
-        interest: item.interest,
-        currency: item.currency,
-        isCurrent: item.isCurrent,
-        notes: item.notes,
-      },
-    });
-  }
-
-  return { count: allItems.length, activeCount: activeItems.length, historyCount: historyItems.length };
+export function syncItemsToStore(items: { activeItems: DepositItem[]; historyItems: DepositItem[] }) {
+  const saved = saveDepositStore(items);
+  return {
+    count: saved.activeItems.length + saved.historyItems.length,
+    activeCount: saved.activeItems.length,
+    historyCount: saved.historyItems.length,
+  };
 }
 
-export async function syncExcelToDatabase(filePath?: string) {
+export function syncExcelToStore(filePath?: string) {
   const parsed = parseExcelFile(filePath);
-  if (!parsed) return { count: 0, error: "Summary.xlsx not found" };
-  return syncItemsToDatabase(parsed);
+  if (!parsed) return { count: 0, error: "Summary.xlsx not found" as const };
+  return syncItemsToStore(parsed);
 }
+
+/** @deprecated Use syncItemsToStore */
+export const syncItemsToDatabase = syncItemsToStore;
+/** @deprecated Use syncExcelToStore */
+export const syncExcelToDatabase = syncExcelToStore;

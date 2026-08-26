@@ -1,18 +1,14 @@
-import { SystemRole } from "@prisma/client";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/auth";
+import { getSessionUser, HARDCODED_USER } from "@/lib/session";
 
-export async function requireUser() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) redirect("/login");
-  return session.user;
+export type AppUser = typeof HARDCODED_USER;
+
+export async function requireUser(): Promise<AppUser> {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+  return user;
 }
 
-export async function requireStaff() {
-  const user = await requireUser();
-  if (user.systemRole !== SystemRole.ADMIN && user.systemRole !== SystemRole.SUPPORT) {
-    redirect("/app");
-  }
-  return user;
+export async function requireStaff(): Promise<AppUser> {
+  return requireUser();
 }

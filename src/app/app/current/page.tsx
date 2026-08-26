@@ -1,5 +1,5 @@
 import { SortableTable } from "@/components/sortable-table";
-import { db } from "@/lib/db";
+import { loadDepositRecords } from "@/lib/deposit-store";
 import { formatAmount, formatDate, formatRate } from "@/lib/finance";
 import { createDepositRecord, deleteDepositRecord } from "../actions";
 
@@ -15,9 +15,10 @@ export default async function CurrentProductsPage({
   const bankFilter = params.bank || "All";
   const typeFilter = params.type || "All";
 
-  const allRecords = await db.depositRecord.findMany({
-    where: { isCurrent: true },
-    orderBy: [{ ownerName: "asc" }, { amount: "desc" }],
+  const allRecords = loadDepositRecords({ isCurrent: true }).sort((a, b) => {
+    const byOwner = a.ownerName.localeCompare(b.ownerName);
+    if (byOwner !== 0) return byOwner;
+    return b.amount - a.amount;
   });
 
   // Filter records

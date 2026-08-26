@@ -1,33 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { loginAction } from "./actions";
 
-export default function LoginPage() {
-  const [error, setError] = useState("");
-  async function submit(formData: FormData) {
-    setError("");
-    const result = await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      callbackUrl: "/app",
-      redirect: false,
-    });
-    if (result?.error) setError("That email or password was not recognized.");
-    else window.location.assign(result?.url ?? "/app");
-  }
+function LoginForm() {
+  const params = useSearchParams();
+  const error = params.get("error");
+  const next = params.get("next") || "/app";
+
   return (
     <main className="auth-page">
-      <form action={submit} className="auth-card">
+      <form action={loginAction} className="auth-card">
         <p className="eyebrow">Family finance</p>
         <h1>Welcome back</h1>
-        <p className="subtitle">Sign in to your private financial dashboard.</p>
+        <p className="subtitle">Sign in with the hardcoded account, then upload Excel to load data.</p>
         {error && (
           <p className="error" role="alert">
-            {error}
+            That account or password was not recognized.
           </p>
         )}
+        <input type="hidden" name="next" value={next} />
         <label>
           Account / Email
           <input
@@ -35,7 +29,8 @@ export default function LoginPage() {
             name="email"
             type="text"
             autoComplete="username"
-            placeholder="e.g. Vin"
+            placeholder="Vin"
+            defaultValue="Vin"
           />
         </label>
         <label>
@@ -45,13 +40,25 @@ export default function LoginPage() {
             name="password"
             type="password"
             autoComplete="current-password"
+            placeholder="admin123"
           />
         </label>
         <button className="button w-full">Sign in</button>
+        <p className="form-note text-slate-500">
+          Hardcoded login: <strong>Vin</strong> / <strong>admin123</strong>
+        </p>
         <p className="form-note">
-          <Link href="/forgot-password">Forgot password?</Link>
+          <Link href="/">Back to home</Link>
         </p>
       </form>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<main className="auth-page"><div className="auth-card">Loading…</div></main>}>
+      <LoginForm />
+    </Suspense>
   );
 }
