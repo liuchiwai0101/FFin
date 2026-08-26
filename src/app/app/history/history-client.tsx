@@ -11,7 +11,7 @@ export default function HistoryPage() {
   const userFilter = params.get("user") || "All";
   const bankFilter = params.get("bank") || "All";
   const searchFilter = (params.get("search") || "").toLowerCase();
-  const { ready, historyRecords, upsertRecord, deleteRecord } = useDepositData();
+  const { ready, historyRecords, activeRecords, upsertRecord, deleteRecord } = useDepositData();
 
   const allRecords = [...historyRecords].sort(
     (a, b) => (a.fromDate?.getTime() ?? 0) - (b.fromDate?.getTime() ?? 0),
@@ -29,7 +29,14 @@ export default function HistoryPage() {
   });
 
   const totalInterestEarned = filtered.reduce((sum, r) => sum + (r.interest || 0), 0);
-  const selectedUserTotal = filtered.reduce((sum, r) => sum + r.amount, 0);
+  // Actual current holdings for selected user (not cumulative historical matured volume)
+  const selectedUserTotal = activeRecords
+    .filter((r) => {
+      if (userFilter !== "All" && r.ownerName !== userFilter) return false;
+      if (bankFilter !== "All" && !r.bank.toUpperCase().includes(bankFilter.toUpperCase())) return false;
+      return true;
+    })
+    .reduce((sum, r) => sum + r.amount, 0);
   const selectedUserLabel = userFilter === "All" ? "All members" : userFilter;
   const avgRate =
     filtered.length > 0
@@ -122,7 +129,7 @@ export default function HistoryPage() {
         <div className="card p-4">
           <span className="text-xs font-bold uppercase text-slate-500 truncate block">Selected User Total</span>
           <p className="kpi-value mt-1 text-slate-900">{formatAmount(selectedUserTotal, "HKD")}</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">{selectedUserLabel} · historical principal</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{selectedUserLabel} · current principal</p>
         </div>
         <div className="card p-4 bg-emerald-50/40 border-emerald-100">
           <span className="text-xs font-bold uppercase text-emerald-800 truncate block">Total Interest Earned</span>
