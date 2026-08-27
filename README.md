@@ -6,11 +6,12 @@ Next.js app with hardcoded login and Excel upload (no database required).
 
 ## Live deploy (Vercel)
 
-**GitHub homepage URL:** [https://temporary-prompt-cedar-pdsctj1.vercel.app](https://temporary-prompt-cedar-pdsctj1.vercel.app) (claimed project)  
-**Backup temporary URL:** [https://temporary-quick-plateau-bfpxpbp.vercel.app](https://temporary-quick-plateau-bfpxpbp.vercel.app) — [claim](https://vercel.com/claim-deployment?code=42092fa5-5b62-47e5-9533-aa88e4534e37)  
-**Login:** Vin / admin123
+**Production:** [https://ffin-silk.vercel.app](https://ffin-silk.vercel.app)  
+**Login:** Vin / admin123  
 
-Production path: deploy the Next.js app on Vercel, linked to this GitHub repo so every push to `main` redeploys.
+Vercel project `ffin` is linked to GitHub `liuchiwai0101/FFin` (Production Branch: `main`). Pushes to `main` auto-deploy.
+
+Update the GitHub repo **About → Website** to `https://ffin-silk.vercel.app` if it still shows the old temporary URL.
 
 ### Env vars (Vercel → Project → Settings → Environment Variables)
 
@@ -31,10 +32,13 @@ Production path: deploy the Next.js app on Vercel, linked to this GitHub repo so
 
 ### Claim / GitHub link
 
-1. Open the claim URL from the latest temporary deploy (or import **https://github.com/liuchiwai0101/FFin** in the Vercel dashboard).
-2. Connect the GitHub repo and set Production Branch to `main`.
-3. Add the env vars above, then redeploy.
-4. Set the GitHub repo homepage to the Vercel URL (Settings → General → Website).
+Already done for project `ffin`:
+
+- GitHub repo connected, Production Branch `main`
+- Env vars set (`AUTH_SECRET`, `APP_URL`, etc.)
+- Production URL: https://ffin-silk.vercel.app
+
+Set GitHub **About → Website** to that URL (agent cannot edit homepage; API 403).
 
 ## Local Next.js
 
