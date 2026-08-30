@@ -616,7 +616,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (ok) localStorage.setItem(AUTH_KEY, "1");
     return ok;
   }
-  function logout() { localStorage.removeItem(AUTH_KEY); }
+  function logout() { clearStore(); localStorage.removeItem(AUTH_KEY); }
 
   function formatAmount(amount, currency) {
     currency = currency || "HKD";

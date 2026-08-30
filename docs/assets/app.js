@@ -145,6 +145,7 @@
   }
 
   function logout() {
+    clearStore();
     localStorage.removeItem(AUTH_KEY);
   }
 

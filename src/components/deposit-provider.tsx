@@ -103,6 +103,14 @@ function persist(store: DepositStore) {
   listeners.forEach((listener) => listener());
 }
 
+export function clearUploadedExcelData() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(STORAGE_KEY);
+  cachedJson = null;
+  cachedStore = EMPTY;
+  listeners.forEach((listener) => listener());
+}
+
 function subscribeNoop() {
   return () => {};
 }
@@ -116,10 +124,7 @@ export function DepositProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearStore = useCallback(() => {
-    window.localStorage.removeItem(STORAGE_KEY);
-    cachedJson = null;
-    cachedStore = EMPTY;
-    listeners.forEach((listener) => listener());
+    clearUploadedExcelData();
   }, []);
 
   const upsertRecord = useCallback((record: DepositItem & { isCurrent: boolean; id?: string }) => {
