@@ -15,10 +15,11 @@ Free github.io hosting needs a **public** repo (News is public). Private Pages r
 
 One-time (repo owner), then the latest version stays on github.io:
 
-1. **Settings → General → Danger zone → Change visibility → Public**
+1. **Settings → General → Danger zone → Change visibility → Public** (required for free github.io, same as News)
 2. **Settings → Pages → Build and deployment**
    - Source: **Deploy from a branch**
    - Branch: **`gh-pages`** / **`/(root)`**
+   - Or, like News: branch **`main`** / **`/(root)`** — `index.html` at the repo root opens the latest `docs/` app
 3. **About → Website:** `https://liuchiwai0101.github.io/FFin/`
 
 ## Live deploy (Vercel)
