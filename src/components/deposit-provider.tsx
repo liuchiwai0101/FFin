@@ -4,9 +4,8 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import type { DepositItem } from "@/lib/excel-data";
@@ -57,70 +56,95 @@ function normalizeStore(raw: DepositStore): DepositStore {
   };
 }
 
-function readStorage(): DepositStore {
-  if (typeof window === "undefined") return { ...EMPTY };
+const listeners = new Set<() => void>();
+let cachedJson: string | null | undefined;
+let cachedStore: DepositStore = EMPTY;
+
+function parseStore(raw: string | null): DepositStore {
+  if (!raw) return EMPTY;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...EMPTY };
     return normalizeStore(JSON.parse(raw) as DepositStore);
   } catch {
-    return { ...EMPTY };
+    return EMPTY;
   }
 }
 
-function writeStorage(store: DepositStore) {
+function getClientSnapshot(): DepositStore {
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (raw === cachedJson) return cachedStore;
+  cachedJson = raw;
+  cachedStore = parseStore(raw);
+  return cachedStore;
+}
+
+function getServerSnapshot(): DepositStore {
+  return EMPTY;
+}
+
+function subscribe(onStoreChange: () => void) {
+  listeners.add(onStoreChange);
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === STORAGE_KEY || event.key === null) {
+      cachedJson = undefined;
+      onStoreChange();
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    listeners.delete(onStoreChange);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+function persist(store: DepositStore) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  cachedJson = window.localStorage.getItem(STORAGE_KEY);
+  cachedStore = store;
+  listeners.forEach((listener) => listener());
+}
+
+function subscribeNoop() {
+  return () => {};
 }
 
 export function DepositProvider({ children }: { children: ReactNode }) {
-  const [ready, setReady] = useState(false);
-  const [store, setStore] = useState<DepositStore>(EMPTY);
-
-  useEffect(() => {
-    setStore(readStorage());
-    setReady(true);
-  }, []);
+  const store = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+  const ready = useSyncExternalStore(subscribeNoop, () => true, () => false);
 
   const replaceStore = useCallback((next: DepositStore) => {
-    const normalized = normalizeStore(next);
-    setStore(normalized);
-    writeStorage(normalized);
+    persist(normalizeStore(next));
   }, []);
 
   const clearStore = useCallback(() => {
-    setStore({ ...EMPTY });
     window.localStorage.removeItem(STORAGE_KEY);
+    cachedJson = null;
+    cachedStore = EMPTY;
+    listeners.forEach((listener) => listener());
   }, []);
 
   const upsertRecord = useCallback((record: DepositItem & { isCurrent: boolean; id?: string }) => {
-    setStore((prev) => {
-      const id =
-        record.id ||
-        `${record.isCurrent ? "active" : "history"}-${Date.now()}-${record.ownerName}-${record.bank}`;
-      const item: DepositItem = { ...record, id };
-      const next: DepositStore = {
-        syncedAt: new Date().toISOString(),
-        activeItems: record.isCurrent
-          ? [...prev.activeItems.filter((r) => r.id !== id), item]
-          : prev.activeItems,
-        historyItems: !record.isCurrent
-          ? [...prev.historyItems.filter((r) => r.id !== id), item]
-          : prev.historyItems,
-      };
-      writeStorage(next);
-      return next;
+    const prev = getClientSnapshot();
+    const id =
+      record.id ||
+      `${record.isCurrent ? "active" : "history"}-${Date.now()}-${record.ownerName}-${record.bank}`;
+    const item: DepositItem = { ...record, id };
+    persist({
+      syncedAt: new Date().toISOString(),
+      activeItems: record.isCurrent
+        ? [...prev.activeItems.filter((r) => r.id !== id), item]
+        : prev.activeItems,
+      historyItems: !record.isCurrent
+        ? [...prev.historyItems.filter((r) => r.id !== id), item]
+        : prev.historyItems,
     });
   }, []);
 
   const deleteRecord = useCallback((id: string) => {
-    setStore((prev) => {
-      const next: DepositStore = {
-        syncedAt: new Date().toISOString(),
-        activeItems: prev.activeItems.filter((r) => r.id !== id),
-        historyItems: prev.historyItems.filter((r) => r.id !== id),
-      };
-      writeStorage(next);
-      return next;
+    const prev = getClientSnapshot();
+    persist({
+      syncedAt: new Date().toISOString(),
+      activeItems: prev.activeItems.filter((r) => r.id !== id),
+      historyItems: prev.historyItems.filter((r) => r.id !== id),
     });
   }, []);
 
