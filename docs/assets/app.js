@@ -177,6 +177,14 @@
     return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-CA");
   }
 
+  function endedYear(toDate) {
+    if (!toDate) return null;
+    const match = String(toDate).match(/^(\d{4})/);
+    if (match) return Number(match[1]);
+    const d = new Date(toDate);
+    return isNaN(d.getTime()) ? null : d.getUTCFullYear();
+  }
+
   function compare(a, b, type, dir) {
     const emptyA = a === null || a === undefined || a === "";
     const emptyB = b === null || b === undefined || b === "";
@@ -240,6 +248,7 @@
     formatAmount,
     formatRate,
     formatDate,
+    endedYear,
     compare,
     renderShell,
     normalizeBank,

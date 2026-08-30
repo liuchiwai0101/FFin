@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SortableTable } from "@/components/sortable-table";
 import { useDepositData } from "@/components/deposit-provider";
-import { formatAmount, formatDate, formatRate } from "@/lib/finance";
+import { endedYear, formatAmount, formatDate, formatRate } from "@/lib/finance";
 
 export default function HistoryPage() {
   const params = useSearchParams();
   const userFilter = params.get("user") || "All";
   const bankFilter = params.get("bank") || "All";
+  const yearFilter = params.get("year") || "All";
   const searchFilter = (params.get("search") || "").toLowerCase();
   const { ready, historyRecords, activeRecords, upsertRecord, deleteRecord } = useDepositData();
 
@@ -20,6 +21,7 @@ export default function HistoryPage() {
   const filtered = allRecords.filter((r) => {
     if (userFilter !== "All" && r.ownerName !== userFilter) return false;
     if (bankFilter !== "All" && !r.bank.toUpperCase().includes(bankFilter.toUpperCase())) return false;
+    if (yearFilter !== "All" && String(endedYear(r.toDate)) !== yearFilter) return false;
     if (searchFilter) {
       const matchProduct = r.product.toLowerCase().includes(searchFilter);
       const matchNotes = (r.notes || "").toLowerCase().includes(searchFilter);
@@ -45,6 +47,22 @@ export default function HistoryPage() {
 
   const users = ["All", "MA", "Vin", "Miki", "BABA"];
   const banks = ["All", "BOC", "HS", "SC", "HSBC", "ICBC"];
+  const yearsFromData = [
+    ...new Set(
+      allRecords
+        .map((r) => endedYear(r.toDate))
+        .filter((year): year is number => year !== null),
+    ),
+  ].sort((a, b) => b - a);
+  const years = ["All", ...yearsFromData.map(String)];
+  if (yearFilter !== "All" && !years.includes(yearFilter)) years.splice(1, 0, yearFilter);
+
+  const historyHref = (user: string, bank: string, year: string) => {
+    const query = new URLSearchParams({ user, bank, year });
+    const search = params.get("search");
+    if (search) query.set("search", search);
+    return `/app/history?${query.toString()}`;
+  };
 
   if (!ready) {
     return <div className="card p-6 text-sm text-slate-500">Loading…</div>;
@@ -90,7 +108,7 @@ export default function HistoryPage() {
             {users.map((u) => (
               <a
                 key={u}
-                href={`/app/history?user=${u}&bank=${bankFilter}`}
+                href={historyHref(u, bankFilter, yearFilter)}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
                   userFilter === u
                     ? "bg-teal-700 text-white shadow-sm"
@@ -110,7 +128,7 @@ export default function HistoryPage() {
             {banks.map((b) => (
               <a
                 key={b}
-                href={`/app/history?user=${userFilter}&bank=${b}`}
+                href={historyHref(userFilter, b, yearFilter)}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
                   bankFilter === b
                     ? "bg-teal-700 text-white shadow-sm"
@@ -118,6 +136,26 @@ export default function HistoryPage() {
                 }`}
               >
                 {b}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Ended-year filter (toDate) */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-24">Ended year:</span>
+          <div className="flex flex-wrap gap-1.5">
+            {years.map((year) => (
+              <a
+                key={year}
+                href={historyHref(userFilter, bankFilter, year)}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                  yearFilter === year
+                    ? "bg-teal-700 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {year}
               </a>
             ))}
           </div>

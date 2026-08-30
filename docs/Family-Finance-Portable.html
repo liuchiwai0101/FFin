@@ -637,6 +637,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const d = typeof value === "string" ? new Date(value + "T00:00:00") : new Date(value);
     return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-CA");
   }
+  function endedYear(toDate) {
+    if (!toDate) return null;
+    const match = String(toDate).match(/^(\d{4})/);
+    if (match) return Number(match[1]);
+    const d = new Date(toDate);
+    return isNaN(d.getTime()) ? null : d.getUTCFullYear();
+  }
   function normalizeBank(b) {
     if (b.includes("HSBC") || b.includes("MA HSBC")) return "HSBC";
     if (b.includes("SC")) return "SC";
@@ -661,6 +668,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   let currentBankFilter = "All";
   let historyUserFilter = "All";
   let historyBankFilter = "All";
+  let historyYearFilter = "All";
   let currentSort = { key: "ownerName", type: "string", dir: "asc" };
   let historySort = { key: "fromDate", type: "date", dir: "asc" };
 
@@ -848,6 +856,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     let filtered = store.historyItems.map((r, i) => Object.assign({}, r, { seq: i + 1 })).filter((r) => {
       if (historyUserFilter !== "All" && r.ownerName !== historyUserFilter) return false;
       if (historyBankFilter !== "All" && !r.bank.toUpperCase().includes(historyBankFilter.toUpperCase())) return false;
+      if (historyYearFilter !== "All" && String(endedYear(r.toDate)) !== historyYearFilter) return false;
       return true;
     });
     filtered = filtered.slice().sort((a, b) => {
@@ -866,6 +875,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const avg = filtered.length ? filtered.reduce((s, r) => s + (r.rate || 0), 0) / filtered.length : 0;
     const users = ["All", "MA", "Vin", "Miki", "BABA"];
     const banks = ["All", "BOC", "HS", "SC", "HSBC", "ICBC"];
+    const years = ["All"].concat(
+      Array.from(new Set(store.historyItems.map((r) => endedYear(r.toDate)).filter((y) => y !== null)))
+        .sort((a, b) => b - a)
+        .map(String)
+    );
+    if (historyYearFilter !== "All" && years.indexOf(historyYearFilter) === -1) years.splice(1, 0, historyYearFilter);
     const selectedLabel = historyUserFilter === "All" ? "All members" : historyUserFilter;
 
     el.innerHTML =
@@ -874,6 +889,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       users.map((u) => "<button class=\"chip" + (historyUserFilter === u ? " active" : "") + "\" data-huser=\"" + u + "\">" + u + "</button>").join("") +
       "</div><div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">BANK</span>" +
       banks.map((b) => "<button class=\"chip" + (historyBankFilter === b ? " active" : "") + "\" data-hbank=\"" + b + "\">" + b + "</button>").join("") +
+      "</div><div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">ENDED YEAR</span>" +
+      years.map((y) => "<button class=\"chip" + (historyYearFilter === y ? " active" : "") + "\" data-hyear=\"" + y + "\">" + y + "</button>").join("") +
       "</div></div>" +
       "<div class=\"grid grid-3\"><div class=\"card\"><span class=\"kpi-label\">Selected User Total</span><p class=\"kpi-value\">" + formatAmount(selectedUserTotal) + "</p><p class=\"subtitle\">" + selectedLabel + " · current principal</p></div>" +
       "<div class=\"card\" style=\"background:#ecfdf5;border-color:#a7f3d0;\"><span class=\"kpi-label\" style=\"color:#065f46;\">Total Interest Earned</span><p class=\"kpi-value green\">+" + formatAmount(interest) + "</p></div>" +
@@ -898,6 +915,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     el.querySelectorAll("[data-huser]").forEach((btn) => btn.addEventListener("click", () => { historyUserFilter = btn.dataset.huser; renderHistory(); }));
     el.querySelectorAll("[data-hbank]").forEach((btn) => btn.addEventListener("click", () => { historyBankFilter = btn.dataset.hbank; renderHistory(); }));
+    el.querySelectorAll("[data-hyear]").forEach((btn) => btn.addEventListener("click", () => { historyYearFilter = btn.dataset.hyear; renderHistory(); }));
     el.querySelectorAll("[data-hsort]").forEach((btn) => btn.addEventListener("click", () => {
       if (historySort.key === btn.dataset.hsort) historySort.dir = historySort.dir === "asc" ? "desc" : "asc";
       else {

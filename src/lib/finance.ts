@@ -27,6 +27,18 @@ export function formatDate(date: Date | string | null | undefined): string {
   return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-CA"); // YYYY-MM-DD
 }
 
+/** Calendar year of a matured/ended date (`toDate`). */
+export function endedYear(date: Date | string | null | undefined): number | null {
+  if (!date) return null;
+  if (typeof date === "string") {
+    const match = date.match(/^(\d{4})/);
+    if (match) return Number(match[1]);
+    const parsed = new Date(date);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.getUTCFullYear();
+  }
+  return Number.isNaN(date.getTime()) ? null : date.getUTCFullYear();
+}
+
 export function formatMoney(minorUnits: number, currency = "HKD") {
   return formatAmount(minorUnits / 100, currency, { decimals: 2 });
 }

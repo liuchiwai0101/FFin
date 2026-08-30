@@ -36,6 +36,9 @@
           <button class="chip" data-bank="HSBC">HSBC</button>
           <button class="chip" data-bank="ICBC">ICBC</button>
         </div>
+        <div class="filters" id="year-filters">
+          <span class="muted" style="font-size:0.75rem;font-weight:800;text-transform:uppercase;">Ended year</span>
+        </div>
       </div>
       <div class="grid grid-3">
         <div class="card"><span class="kpi-label">Selected User Total</span><p class="kpi-value" id="kpi-volume">—</p><p class="subtitle" id="kpi-volume-note">Current principal (not cumulative history)</p></div>
@@ -69,6 +72,7 @@
 
     let userFilter = "All";
     let bankFilter = "All";
+    let yearFilter = "All";
     let sortKey = "fromDate";
     let sortType = "date";
     let sortDir = "asc";
@@ -79,6 +83,7 @@
         .filter((r) => {
           if (userFilter !== "All" && r.ownerName !== userFilter) return false;
           if (bankFilter !== "All" && !r.bank.toUpperCase().includes(bankFilter.toUpperCase())) return false;
+          if (yearFilter !== "All" && String(FFin.endedYear(r.toDate)) !== yearFilter) return false;
           return true;
         });
     }
@@ -92,6 +97,22 @@
       }
       document.getElementById("empty").hidden = true;
       document.getElementById("panel").hidden = false;
+      const years = ["All", ...[...new Set(all.map((r) => FFin.endedYear(r.toDate)).filter((y) => y !== null))]
+        .sort((a, b) => b - a)
+        .map(String)];
+      if (yearFilter !== "All" && !years.includes(yearFilter)) years.splice(1, 0, yearFilter);
+      const yearRow = document.getElementById("year-filters");
+      yearRow.innerHTML =
+        '<span class="muted" style="font-size:0.75rem;font-weight:800;text-transform:uppercase;">Ended year</span>' +
+        years.map((y) =>
+          `<button class="chip${yearFilter === y ? " active" : ""}" data-year="${y}">${y}</button>`
+        ).join("");
+      yearRow.querySelectorAll("[data-year]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          yearFilter = btn.dataset.year;
+          render();
+        });
+      });
       const filtered = rows().sort((a, b) => {
         const av = sortType === "date" ? (a[sortKey] ? new Date(a[sortKey]).getTime() : null) : a[sortKey];
         const bv = sortType === "date" ? (b[sortKey] ? new Date(b[sortKey]).getTime() : null) : b[sortKey];
