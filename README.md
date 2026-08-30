@@ -4,14 +4,29 @@ Next.js app with hardcoded login and Excel upload (no database required).
 
 **Login:** `Vin` / `admin123`
 
+## GitHub Pages (github.io)
+
+**GitHub-domain site:** [https://liuchiwai0101.github.io/FFin/](https://liuchiwai0101.github.io/FFin/)  
+**Login:** Vin / admin123  
+
+This is the same access pattern as [News](https://liuchiwai0101.github.io/News/). The latest static app lives in `docs/` and is published to the `gh-pages` branch on every `main` update.
+
+Free github.io hosting needs a **public** repo (News is public). Private Pages requires GitHub Pro.
+
+One-time (repo owner), then the latest version stays on github.io:
+
+1. **Settings → General → Danger zone → Change visibility → Public**
+2. **Settings → Pages → Build and deployment**
+   - Source: **Deploy from a branch**
+   - Branch: **`gh-pages`** / **`/(root)`**
+3. **About → Website:** `https://liuchiwai0101.github.io/FFin/`
+
 ## Live deploy (Vercel)
 
-**Production:** [https://ffin-silk.vercel.app](https://ffin-silk.vercel.app)  
+**Production (Next.js):** [https://ffin-silk.vercel.app](https://ffin-silk.vercel.app)  
 **Login:** Vin / admin123  
 
 Vercel project `ffin` is linked to GitHub `liuchiwai0101/FFin` (Production Branch: `main`). Pushes to `main` auto-deploy.
-
-Update the GitHub repo **About → Website** to `https://ffin-silk.vercel.app` if it still shows the old temporary URL.
 
 ### Env vars (Vercel → Project → Settings → Environment Variables)
 
@@ -38,7 +53,7 @@ Already done for project `ffin`:
 - Env vars set (`AUTH_SECRET`, `APP_URL`, etc.)
 - Production URL: https://ffin-silk.vercel.app
 
-Set GitHub **About → Website** to that URL (agent cannot edit homepage; API 403).
+GitHub **About → Website** should be `https://liuchiwai0101.github.io/FFin/` (the GitHub-domain deployment). Vercel remains the Next.js production URL above.
 
 ## Local Next.js
 
@@ -57,7 +72,7 @@ Download **[docs/Family-Finance-Portable.html](docs/Family-Finance-Portable.html
 
 ## Static docs / GitHub Pages
 
-The `docs/` folder and `gh-pages` branch are a static HTML mirror. Private repos need GitHub Pro (or a public repo) for free Pages.
+`docs/` is the static HTML app (Excel upload in the browser, no server). The `gh-pages` branch is the GitHub Pages deployment of that folder.
 
 ```bash
 npx --yes serve docs -p 4173

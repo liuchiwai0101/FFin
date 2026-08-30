@@ -5,10 +5,11 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -17,16 +18,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  # Branch deploy (same model as News): always push the latest docs/ to gh-pages.
+  # Enable Pages in Settings → Pages → Deploy from a branch → gh-pages / (root).
+  publish-gh-pages:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - name: Publish docs/ onto gh-pages
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ffin-pages
+          cp -a docs/. /tmp/ffin-pages/
+          touch /tmp/ffin-pages/.nojekyll
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan pages-publish
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -a /tmp/ffin-pages/. .
+          git add -A
+          git commit -m "Publish latest static site to GitHub Pages"
+          git push -f origin pages-publish:gh-pages
+
+  # Official Actions Pages deploy. Succeeds once the repo owner enables
+  # Settings → Pages → Source: GitHub Actions (and the repo is public, or Pro).
+  deploy-actions-pages:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs
