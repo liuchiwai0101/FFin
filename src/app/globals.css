@@ -353,7 +353,7 @@ td {
 .feature-grid {
   display: grid;
   max-width: 72rem;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   gap: 1rem;
 }
 

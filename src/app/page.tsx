@@ -21,10 +21,6 @@ export default function Home() {
       </section>
       <section className="feature-grid">
         <div>
-          <strong>Hardcoded login</strong>
-          <p>Simple private access with Vin / admin123.</p>
-        </div>
-        <div>
           <strong>Excel-driven</strong>
           <p>Upload Summary.xlsx anytime to refresh every table.</p>
         </div>
