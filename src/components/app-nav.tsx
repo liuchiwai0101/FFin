@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ExportPdfButton } from "@/components/export-pdf-button";
 import { LangToggle } from "@/components/lang-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
 import { useDepositData } from "@/components/deposit-provider";
@@ -55,7 +56,7 @@ export function AppNav({ user }: { user: AppUser }) {
           )}
         </div>
 
-        <nav className="flex items-center flex-wrap gap-1">
+        <nav className="no-print flex items-center flex-wrap gap-1">
           {links.map(({ label, href }) => (
             <Link key={href} className="top-nav-item" href={href}>
               {label}
@@ -69,6 +70,7 @@ export function AppNav({ user }: { user: AppUser }) {
               {syncLabel}
             </span>
           )}
+          <ExportPdfButton />
           <LangToggle />
           <SignOutButton />
         </div>

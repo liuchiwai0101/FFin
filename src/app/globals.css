@@ -425,3 +425,38 @@ td {
     padding: 6rem 0 4rem;
   }
 }
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body,
+  .app-shell {
+    background: white !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .app-topbar {
+    position: static;
+    box-shadow: none;
+  }
+
+  .app-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .card {
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  a[href]::after {
+    content: none !important;
+  }
+}
