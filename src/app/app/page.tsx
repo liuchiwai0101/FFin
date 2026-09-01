@@ -112,6 +112,10 @@ export default function OverviewPage() {
     }
   });
 
+  const activeBanks = banks.filter((b) =>
+    admin ? bankUserMatrix[b].total > 0 : (bankUserMatrix[b][viewer.ownerKey] || 0) > 0,
+  );
+
   // 2. Interest Matrix: User x Bank -> Interest
   const userInterestMatrix: Record<string, Record<string, number>> = {};
   const bankInterestTotals: Record<string, number> = { BOC: 0, HS: 0, SC: 0, HSBC: 0, ICBC: 0, total: 0 };
@@ -296,7 +300,7 @@ export default function OverviewPage() {
                 type: "number",
               },
             ]}
-            rows={banks.map((b) => {
+            rows={activeBanks.map((b) => {
               const row = bankUserMatrix[b];
               const pct = totalPrincipal > 0 ? (row.total / totalPrincipal) * 100 : 0;
               return {
