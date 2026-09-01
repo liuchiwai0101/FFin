@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useSyncExternalStore,
   type ReactNode,
@@ -11,6 +12,7 @@ import {
 import type { DepositItem } from "@/lib/excel-data";
 import type { DepositRecord, DepositStore } from "@/lib/deposit-store";
 import { useViewer } from "@/components/user-context";
+import { isExcelExpired, msUntilExcelClear } from "@/lib/excel-retention";
 import { canViewOwner, isAdmin } from "@/lib/users";
 
 const STORAGE_KEY = "ffin_deposit_store_v1";
@@ -52,7 +54,7 @@ function toRecord(item: DepositItem, fallbackId: string): DepositRecord {
 
 function normalizeStore(raw: DepositStore): DepositStore {
   return {
-    syncedAt: raw.syncedAt ?? new Date().toISOString(),
+    syncedAt: raw.syncedAt ?? null,
     activeItems: withIds(raw.activeItems ?? [], "active"),
     historyItems: withIds(raw.historyItems ?? [], "history"),
   };
@@ -62,20 +64,32 @@ const listeners = new Set<() => void>();
 let cachedJson: string | null | undefined;
 let cachedStore: DepositStore = EMPTY;
 
-function parseStore(raw: string | null): DepositStore {
-  if (!raw) return EMPTY;
+function parseStore(raw: string | null): { store: DepositStore; expired: boolean } {
+  if (!raw) return { store: EMPTY, expired: false };
   try {
-    return normalizeStore(JSON.parse(raw) as DepositStore);
+    const store = normalizeStore(JSON.parse(raw) as DepositStore);
+    if (isExcelExpired(store.syncedAt)) {
+      return { store: EMPTY, expired: true };
+    }
+    return { store, expired: false };
   } catch {
-    return EMPTY;
+    return { store: EMPTY, expired: false };
   }
 }
 
 function getClientSnapshot(): DepositStore {
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (raw === cachedJson) return cachedStore;
+  const { store, expired } = parseStore(raw);
+  if (expired) {
+    window.localStorage.removeItem(STORAGE_KEY);
+    cachedJson = null;
+    cachedStore = EMPTY;
+    listeners.forEach((listener) => listener());
+    return cachedStore;
+  }
   cachedJson = raw;
-  cachedStore = parseStore(raw);
+  cachedStore = store;
   return cachedStore;
 }
 
@@ -122,6 +136,17 @@ export function DepositProvider({ children }: { children: ReactNode }) {
   const store = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
   const ready = useSyncExternalStore(subscribeNoop, () => true, () => false);
 
+  useEffect(() => {
+    if (!store.syncedAt || isExcelExpired(store.syncedAt)) return;
+    const remaining = msUntilExcelClear(store.syncedAt);
+    if (remaining === null || remaining <= 0) {
+      clearUploadedExcelData();
+      return;
+    }
+    const timer = window.setTimeout(() => clearUploadedExcelData(), remaining);
+    return () => window.clearTimeout(timer);
+  }, [store.syncedAt]);
+
   const visibleStore = useMemo<DepositStore>(() => {
     if (isAdmin(viewer)) return store;
     return {
@@ -151,7 +176,7 @@ export function DepositProvider({ children }: { children: ReactNode }) {
     const item: DepositItem = { ...record, id, ownerName };
     if (!canViewOwner(viewer, ownerName)) return;
     persist({
-      syncedAt: new Date().toISOString(),
+      syncedAt: prev.syncedAt,
       activeItems: record.isCurrent
         ? [...prev.activeItems.filter((r) => r.id !== id), item]
         : prev.activeItems,
@@ -167,7 +192,7 @@ export function DepositProvider({ children }: { children: ReactNode }) {
     const target = [...prev.activeItems, ...prev.historyItems].find((r) => r.id === id);
     if (!target || !canViewOwner(viewer, target.ownerName)) return;
     persist({
-      syncedAt: new Date().toISOString(),
+      syncedAt: prev.syncedAt,
       activeItems: prev.activeItems.filter((r) => r.id !== id),
       historyItems: prev.historyItems.filter((r) => r.id !== id),
     });

@@ -24,6 +24,7 @@ const en = {
     sync: "Sync Excel",
     excelUpdated: "Excel: {date}",
     excelNotLoaded: "No Excel loaded",
+    excelClearAt: "Clears: {date}",
   },
   landing: {
     eyebrow: "Personal & Family Wealth",
@@ -185,6 +186,7 @@ const en = {
     title: "Upload & Sync Excel Sheet",
     desc: "Upload Summary.xlsx to populate the dashboard for all family members. Data stays in this browser until you clear it.",
     lastLoaded: "Last loaded: {date}",
+    clearAt: "Auto-clears: {date}",
     activeRecords: "Active Portfolio Records",
     historyRecords: "Historical Interest Records",
     totalRows: "Total Loaded Rows",
@@ -225,6 +227,7 @@ const zh = {
     sync: "同步 Excel",
     excelUpdated: "Excel：{date}",
     excelNotLoaded: "尚未載入 Excel",
+    excelClearAt: "清除：{date}",
   },
   landing: {
     eyebrow: "個人及家庭財富",
@@ -386,6 +389,7 @@ const zh = {
     title: "上傳及同步 Excel 表",
     desc: "上傳 Summary.xlsx 以填充所有家庭成員的儀表板。數據保留在此瀏覽器，直至您清除。",
     lastLoaded: "上次載入：{date}",
+    clearAt: "自動清除：{date}",
     activeRecords: "現有投資組合紀錄",
     historyRecords: "歷史利息紀錄",
     totalRows: "已載入總行數",

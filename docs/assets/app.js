@@ -38,6 +38,36 @@
   }
 
   const EMPTY = { syncedAt: null, activeItems: [], historyItems: [] };
+  const EXCEL_RETENTION_MS = 48 * 60 * 60 * 1000;
+  let clearTimer = null;
+
+  function excelClearAt(syncedAt) {
+    if (!syncedAt) return null;
+    const imported = new Date(syncedAt);
+    if (isNaN(imported.getTime())) return null;
+    return new Date(imported.getTime() + EXCEL_RETENTION_MS);
+  }
+
+  function isExcelExpired(syncedAt) {
+    const clearAt = excelClearAt(syncedAt);
+    if (!clearAt) return false;
+    return Date.now() >= clearAt.getTime();
+  }
+
+  function scheduleExcelClear(syncedAt) {
+    if (clearTimer) clearTimeout(clearTimer);
+    if (!syncedAt) return;
+    if (isExcelExpired(syncedAt)) {
+      clearStore();
+      location.reload();
+      return;
+    }
+    const remaining = excelClearAt(syncedAt).getTime() - Date.now();
+    clearTimer = setTimeout(() => {
+      clearStore();
+      location.reload();
+    }, remaining);
+  }
 
   function excelDateToDate(serial) {
     if (serial === null || serial === undefined || isNaN(Number(serial))) return null;
@@ -144,15 +174,20 @@
   function loadStore() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { ...EMPTY, activeItems: [], historyItems: [] };
+      if (!raw) return { syncedAt: null, activeItems: [], historyItems: [] };
       const parsed = JSON.parse(raw);
-      return {
+      const store = {
         syncedAt: parsed.syncedAt || null,
         activeItems: parsed.activeItems || [],
         historyItems: parsed.historyItems || [],
       };
+      if (isExcelExpired(store.syncedAt)) {
+        clearStore();
+        return { syncedAt: null, activeItems: [], historyItems: [] };
+      }
+      return store;
     } catch {
-      return { ...EMPTY, activeItems: [], historyItems: [] };
+      return { syncedAt: null, activeItems: [], historyItems: [] };
     }
   }
 
@@ -257,8 +292,10 @@
     if (!bar || !user) return;
     const admin = isAdmin(user);
     const store = loadStore();
+    scheduleExcelClear(store.syncedAt);
+    const clearAt = excelClearAt(store.syncedAt);
     const syncedLabel = store.syncedAt
-      ? `Excel: ${new Date(store.syncedAt).toLocaleString()}`
+      ? `Excel: ${new Date(store.syncedAt).toLocaleString()}${clearAt ? ` · Clears: ${clearAt.toLocaleString()}` : ""}`
       : "No Excel loaded";
     bar.innerHTML = `
       <header class="topbar">

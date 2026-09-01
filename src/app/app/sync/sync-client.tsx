@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useDepositData } from "@/components/deposit-provider";
 import { useLocale } from "@/lib/i18n/locale-provider";
+import { excelClearAt } from "@/lib/excel-retention";
 
 export default function SyncPageClient() {
   const router = useRouter();
@@ -51,9 +52,18 @@ export default function SyncPageClient() {
         <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">{t("sync.title")}</h1>
         <p className="mt-1 text-sm text-slate-500">{t("sync.desc")}</p>
         {ready && store.syncedAt && (
-          <p className="mt-2 text-xs text-teal-700 font-semibold">
-            {t("sync.lastLoaded", { date: new Date(store.syncedAt).toLocaleString() })}
-          </p>
+          <>
+            <p className="mt-2 text-xs text-teal-700 font-semibold">
+              {t("sync.lastLoaded", { date: new Date(store.syncedAt).toLocaleString() })}
+            </p>
+            {excelClearAt(store.syncedAt) && (
+              <p className="mt-1 text-xs text-amber-700 font-semibold">
+                {t("sync.clearAt", {
+                  date: excelClearAt(store.syncedAt)!.toLocaleString(),
+                })}
+              </p>
+            )}
+          </>
         )}
       </div>
 

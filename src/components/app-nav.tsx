@@ -5,7 +5,12 @@ import { LangToggle } from "@/components/lang-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
 import { useDepositData } from "@/components/deposit-provider";
 import { useLocale } from "@/lib/i18n/locale-provider";
+import { excelClearAt } from "@/lib/excel-retention";
 import { isAdmin, type AppUser } from "@/lib/users";
+
+function formatNavDate(iso: string, locale: "en" | "zh") {
+  return new Date(iso).toLocaleString(locale === "zh" ? "zh-HK" : "en-US");
+}
 
 export function AppNav({ user }: { user: AppUser }) {
   const { t, locale } = useLocale();
@@ -19,11 +24,10 @@ export function AppNav({ user }: { user: AppUser }) {
     ...(admin ? [{ label: t("nav.sync"), href: "/app/sync" }] : []),
   ];
 
+  const clearAt = store.syncedAt ? excelClearAt(store.syncedAt) : null;
   const syncLabel =
-    ready && store.syncedAt
-      ? t("nav.excelUpdated", {
-          date: new Date(store.syncedAt).toLocaleString(locale === "zh" ? "zh-HK" : "en-US"),
-        })
+    ready && store.syncedAt && clearAt
+      ? `${t("nav.excelUpdated", { date: formatNavDate(store.syncedAt, locale) })} · ${t("nav.excelClearAt", { date: formatNavDate(clearAt.toISOString(), locale) })}`
       : ready
         ? t("nav.excelNotLoaded")
         : null;
@@ -45,7 +49,7 @@ export function AppNav({ user }: { user: AppUser }) {
             {admin ? ` · ${t("common.admin")}` : ""}
           </span>
           {syncLabel && (
-            <span className="text-[11px] font-medium text-slate-500 hidden sm:inline">
+            <span className="text-[11px] font-medium text-slate-500 hidden lg:inline max-w-md">
               {syncLabel}
             </span>
           )}
@@ -61,7 +65,9 @@ export function AppNav({ user }: { user: AppUser }) {
 
         <div className="flex items-center gap-2 flex-wrap justify-end">
           {syncLabel && (
-            <span className="text-[11px] font-medium text-slate-500 sm:hidden">{syncLabel}</span>
+            <span className="text-[11px] font-medium text-slate-500 lg:hidden max-w-[14rem] text-right">
+              {syncLabel}
+            </span>
           )}
           <LangToggle />
           <SignOutButton />
