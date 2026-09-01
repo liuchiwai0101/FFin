@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Minimal Node server for Docker / Zeabur / Sealos / any VPS (not Vercel).
+  output: "standalone",
   experimental: {
     proxyClientMaxBodySize: "10mb",
     serverActions: {
