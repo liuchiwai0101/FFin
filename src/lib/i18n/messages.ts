@@ -15,8 +15,9 @@ const en = {
     backHome: "Back to home",
     admin: "Admin",
     familyFinance: "Family Finance",
-    exportPdf: "Export PDF",
-    exportPdfHint: "Save this page as PDF to share",
+    exportJpg: "Export JPG",
+    exportJpgHint: "Save this page as a single color JPG image",
+    exporting: "Exporting…",
   },
   lang: { en: "En", zh: "中文" },
   nav: {
@@ -226,8 +227,9 @@ const zh = {
     backHome: "返回首頁",
     admin: "管理員",
     familyFinance: "家庭理財",
-    exportPdf: "匯出 PDF",
-    exportPdfHint: "將此頁面儲存為 PDF 以便分享",
+    exportJpg: "匯出 JPG",
+    exportJpgHint: "將此頁面儲存為單張彩色 JPG 圖片",
+    exporting: "匯出中…",
   },
   lang: { en: "En", zh: "中文" },
   nav: {

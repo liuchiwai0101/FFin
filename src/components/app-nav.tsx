@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExportPdfButton } from "@/components/export-pdf-button";
+import { ExportJpgButton } from "@/components/export-jpg-button";
 import { LangToggle } from "@/components/lang-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
 import { useDepositData } from "@/components/deposit-provider";
@@ -70,7 +70,7 @@ export function AppNav({ user }: { user: AppUser }) {
               {syncLabel}
             </span>
           )}
-          <ExportPdfButton />
+          <ExportJpgButton />
           <LangToggle />
           <SignOutButton />
         </div>

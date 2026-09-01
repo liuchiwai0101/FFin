@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { ExportPdfButton } from "@/components/export-pdf-button";
+import { ExportJpgButton } from "@/components/export-jpg-button";
 import { LangToggle } from "@/components/lang-toggle";
 import { useT } from "@/lib/i18n/locale-provider";
 
@@ -16,7 +16,7 @@ function LoginForm() {
   return (
     <main className="auth-page">
       <div className="absolute top-4 right-4 flex items-center gap-2">
-        <ExportPdfButton />
+        <ExportJpgButton />
         <LangToggle />
       </div>
       <form action="/api/login" method="post" className="auth-card">

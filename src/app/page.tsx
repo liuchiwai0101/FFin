@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExportPdfButton } from "@/components/export-pdf-button";
+import { ExportJpgButton } from "@/components/export-jpg-button";
 import { LangToggle } from "@/components/lang-toggle";
 import { useT } from "@/lib/i18n/locale-provider";
 
@@ -13,7 +13,7 @@ export default function Home() {
       <nav>
         <span className="brand">{t("common.familyFinance")}</span>
         <div className="flex items-center gap-2">
-          <ExportPdfButton />
+          <ExportJpgButton />
           <LangToggle />
           <Link href="/login">{t("common.signIn")}</Link>
         </div>
