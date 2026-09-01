@@ -256,12 +256,17 @@
     const user = getCurrentUser();
     if (!bar || !user) return;
     const admin = isAdmin(user);
+    const store = loadStore();
+    const syncedLabel = store.syncedAt
+      ? `Excel: ${new Date(store.syncedAt).toLocaleString()}`
+      : "No Excel loaded";
     bar.innerHTML = `
       <header class="topbar">
         <div class="topbar-inner">
-          <div style="display:flex;align-items:center;gap:0.6rem;">
+          <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
             <a class="brand" href="./overview.html"><span class="brand-mark">FF</span> Family Finance</a>
             <span class="user-pill">${user.name}${admin ? " · Admin" : ""}</span>
+            <span class="muted" style="font-size:0.7rem;">${syncedLabel}</span>
           </div>
           <nav class="nav">
             <a href="./overview.html" class="${active === "overview" ? "active" : ""}">Overview</a>

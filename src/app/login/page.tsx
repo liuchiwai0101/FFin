@@ -34,7 +34,6 @@ function LoginForm() {
             name="email"
             type="text"
             autoComplete="username"
-            placeholder={t("login.usernamePlaceholder")}
           />
         </label>
         <label>

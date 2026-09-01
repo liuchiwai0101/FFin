@@ -10,12 +10,12 @@ export default async function MemberLayout({ children }: { children: React.React
 
   return (
     <UserProvider user={user}>
-      <div className="app-shell">
-        <AppNav user={user} />
-        <main className="app-main">
-          <DepositProvider>{children}</DepositProvider>
-        </main>
-      </div>
+      <DepositProvider>
+        <div className="app-shell">
+          <AppNav user={user} />
+          <main className="app-main">{children}</main>
+        </div>
+      </DepositProvider>
     </UserProvider>
   );
 }

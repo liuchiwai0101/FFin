@@ -142,13 +142,14 @@ export function DepositProvider({ children }: { children: ReactNode }) {
   }, [viewer]);
 
   const upsertRecord = useCallback((record: DepositItem & { isCurrent: boolean; id?: string }) => {
+    if (!isAdmin(viewer)) return;
     const prev = getClientSnapshot();
-    const ownerName = isAdmin(viewer) ? record.ownerName : viewer.ownerKey;
+    const ownerName = record.ownerName;
     const id =
       record.id ||
       `${record.isCurrent ? "active" : "history"}-${Date.now()}-${ownerName}-${record.bank}`;
     const item: DepositItem = { ...record, id, ownerName };
-    if (!isAdmin(viewer) && !canViewOwner(viewer, ownerName)) return;
+    if (!canViewOwner(viewer, ownerName)) return;
     persist({
       syncedAt: new Date().toISOString(),
       activeItems: record.isCurrent
@@ -161,6 +162,7 @@ export function DepositProvider({ children }: { children: ReactNode }) {
   }, [viewer]);
 
   const deleteRecord = useCallback((id: string) => {
+    if (!isAdmin(viewer)) return;
     const prev = getClientSnapshot();
     const target = [...prev.activeItems, ...prev.historyItems].find((r) => r.id === id);
     if (!target || !canViewOwner(viewer, target.ownerName)) return;

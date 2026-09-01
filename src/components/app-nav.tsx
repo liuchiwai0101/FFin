@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { LangToggle } from "@/components/lang-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
-import { useT } from "@/lib/i18n/locale-provider";
+import { useDepositData } from "@/components/deposit-provider";
+import { useLocale } from "@/lib/i18n/locale-provider";
 import { isAdmin, type AppUser } from "@/lib/users";
 
 export function AppNav({ user }: { user: AppUser }) {
-  const t = useT();
+  const { t, locale } = useLocale();
+  const { store, ready } = useDepositData();
   const admin = isAdmin(user);
 
   const links = [
@@ -17,10 +19,19 @@ export function AppNav({ user }: { user: AppUser }) {
     ...(admin ? [{ label: t("nav.sync"), href: "/app/sync" }] : []),
   ];
 
+  const syncLabel =
+    ready && store.syncedAt
+      ? t("nav.excelUpdated", {
+          date: new Date(store.syncedAt).toLocaleString(locale === "zh" ? "zh-HK" : "en-US"),
+        })
+      : ready
+        ? t("nav.excelNotLoaded")
+        : null;
+
   return (
     <header className="app-topbar">
       <div className="app-topbar-container">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Link href="/app" className="flex items-center gap-2 text-decoration-none">
             <span className="h-7 w-7 rounded-lg bg-teal-700 flex items-center justify-center text-white font-black text-xs shadow-sm">
               FF
@@ -33,6 +44,11 @@ export function AppNav({ user }: { user: AppUser }) {
             {user.name}
             {admin ? ` · ${t("common.admin")}` : ""}
           </span>
+          {syncLabel && (
+            <span className="text-[11px] font-medium text-slate-500 hidden sm:inline">
+              {syncLabel}
+            </span>
+          )}
         </div>
 
         <nav className="flex items-center flex-wrap gap-1">
@@ -43,7 +59,10 @@ export function AppNav({ user }: { user: AppUser }) {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {syncLabel && (
+            <span className="text-[11px] font-medium text-slate-500 sm:hidden">{syncLabel}</span>
+          )}
           <LangToggle />
           <SignOutButton />
         </div>

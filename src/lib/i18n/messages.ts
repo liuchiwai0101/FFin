@@ -22,6 +22,8 @@ const en = {
     current: "Current Products",
     history: "Interest History",
     sync: "Sync Excel",
+    excelUpdated: "Excel: {date}",
+    excelNotLoaded: "No Excel loaded",
   },
   landing: {
     eyebrow: "Personal & Family Wealth",
@@ -221,6 +223,8 @@ const zh = {
     current: "現有產品",
     history: "利息紀錄",
     sync: "同步 Excel",
+    excelUpdated: "Excel：{date}",
+    excelNotLoaded: "尚未載入 Excel",
   },
   landing: {
     eyebrow: "個人及家庭財富",

@@ -183,7 +183,9 @@ export default function CurrentProductsPage() {
               { key: "toDate", label: t("current.colTenor"), type: "date" },
               { key: "interest", label: t("current.colInterest"), className: "text-right", type: "number" },
               { key: "totalAmount", label: t("current.colTotal"), className: "text-right", type: "number" },
-              { key: "action", label: t("current.colAction"), className: "text-right", sortable: false },
+              ...(admin
+                ? [{ key: "action", label: t("current.colAction"), className: "text-right", sortable: false } as const]
+                : []),
             ]}
             rows={filtered.map((r) => {
               const isBond = r.product.includes("Bond") || r.product.includes("債券");
@@ -253,15 +255,19 @@ export default function CurrentProductsPage() {
                   <td key="totalAmount" className="text-right font-mono text-xs font-black text-slate-950">
                     {formatAmount(r.totalAmount || r.amount, r.currency)}
                   </td>,
-                  <td key="action" className="text-right">
-                    <button
-                      type="button"
-                      className="text-xs font-semibold text-rose-600 hover:text-rose-800 cursor-pointer"
-                      onClick={() => deleteRecord(r.id)}
-                    >
-                      {t("common.delete")}
-                    </button>
-                  </td>,
+                  ...(admin
+                    ? [
+                        <td key="action" className="text-right">
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-rose-600 hover:text-rose-800 cursor-pointer"
+                            onClick={() => deleteRecord(r.id)}
+                          >
+                            {t("common.delete")}
+                          </button>
+                        </td>,
+                      ]
+                    : []),
                 ],
               };
             })}
@@ -270,7 +276,7 @@ export default function CurrentProductsPage() {
         </div>
       </section>
 
-      {/* Add New Product Form */}
+      {admin && (
       <section className="card p-6 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900">{t("current.addTitle")}</h2>
         <p className="text-xs text-slate-500 mb-4">{t("current.addDesc")}</p>
@@ -366,6 +372,7 @@ export default function CurrentProductsPage() {
           <button className="button">{t("current.save")}</button>
         </form>
       </section>
+      )}
     </div>
   );
 }
