@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ProjectionPlanner } from "@/components/projection-planner";
 import { SortableTable } from "@/components/sortable-table";
 import { useDepositData } from "@/components/deposit-provider";
 import { useIsAdmin, useViewer } from "@/components/user-context";
@@ -129,42 +130,6 @@ export default function OverviewPage() {
     productTotals[group].count += 1;
     productTotals[group].interest += r.interest || 0;
   });
-
-  // 4. Multi-Year Compounding Projections (from Sheet Base: 7,215,525.50)
-  const baseCapital = 7215525.50;
-  const projections = [
-    { year: t("overview.year1"), cRate: 0.0248, tRate: 0.07 },
-    { year: t("overview.year2"), cRate: 0.0248, tRate: 0.07 },
-    { year: t("overview.year3"), cRate: 0.0200, tRate: 0.07 },
-    { year: t("overview.year4"), cRate: 0.0200, tRate: 0.07 },
-    { year: t("overview.year5"), cRate: 0.0100, tRate: 0.07 },
-    { year: t("overview.year6"), cRate: 0.0100, tRate: 0.07 },
-  ];
-
-  let currentCBase = baseCapital;
-  let currentTBase = baseCapital;
-  const projectionRows = projections.map((p) => {
-    const cBaseNext = currentCBase * (1 + p.cRate);
-    const cInterest = cBaseNext * p.cRate;
-    currentCBase = cBaseNext;
-
-    const tBaseNext = currentTBase * (1 + p.tRate);
-    const tInterest = tBaseNext * p.tRate;
-    currentTBase = tBaseNext;
-
-    return {
-      year: p.year,
-      cBase: cBaseNext,
-      cRate: p.cRate,
-      cInterest,
-      tBase: tBaseNext,
-      tRate: p.tRate,
-      tInterest,
-    };
-  });
-
-  const totalConservativeProfit = currentCBase - baseCapital;
-  const totalTargetProfit = currentTBase - baseCapital;
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -492,127 +457,7 @@ export default function OverviewPage() {
         </div>
       </section>
 
-      {/* Redesigned Clean Full-Width Compound Growth Projections */}
-      <section className="card shadow-sm border-teal-100 space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="h-6 w-6 rounded-full bg-teal-100 text-teal-800 text-xs font-black flex items-center justify-center">
-                6Y
-              </span>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                {t("overview.projectionsTitle")}
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              {t("overview.projectionsDesc")} <strong className="text-slate-800 font-mono">{formatAmount(baseCapital, "HKD")}</strong>
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 text-xs">
-            <span className="inline-flex items-center gap-1.5 text-slate-600">
-              <span className="h-2.5 w-2.5 rounded-full bg-teal-600" /> {t("overview.conservativeYield")}
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-emerald-800 font-bold">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> {t("overview.targetYield")}
-            </span>
-          </div>
-        </div>
-
-        {/* 2-Strategy Summary Cards */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* Conservative Strategy Card */}
-          <div className="rounded-xl border border-teal-100 bg-gradient-to-br from-teal-50/40 to-slate-50 p-4.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-teal-800">
-                {t("overview.strategyA")}
-              </span>
-              <span className="badge text-[10px]">{t("overview.lowRisk")}</span>
-            </div>
-            <div className="mt-3 flex items-baseline justify-between">
-              <div>
-                <span className="text-[11px] text-slate-400">{t("overview.year6Capital")}</span>
-                <p className="text-xl font-black text-slate-900 font-mono">
-                  {formatAmount(currentCBase, "HKD")}
-                </p>
-              </div>
-              <div className="text-right">
-                <span className="text-[11px] text-slate-400">{t("overview.year6Interest")}</span>
-                <p className="text-base font-black text-teal-700 font-mono">
-                  +{formatAmount(totalConservativeProfit, "HKD")}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* 7% Target Strategy Card */}
-          <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 p-4.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">
-                {t("overview.strategyB")}
-              </span>
-              <span className="badge bg-emerald-200 text-emerald-900 text-[10px]">{t("overview.optimized")}</span>
-            </div>
-            <div className="mt-3 flex items-baseline justify-between">
-              <div>
-                <span className="text-[11px] text-slate-400">{t("overview.year6Capital")}</span>
-                <p className="text-xl font-black text-emerald-950 font-mono">
-                  {formatAmount(currentTBase, "HKD")}
-                </p>
-              </div>
-              <div className="text-right">
-                <span className="text-[11px] text-slate-400">{t("overview.year6Interest")}</span>
-                <p className="text-base font-black text-emerald-700 font-mono">
-                  +{formatAmount(totalTargetProfit, "HKD")}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Responsive Milestone Cards Grid - Never Horizontally Scroll */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {projectionRows.map((p, idx) => (
-            <div
-              key={p.year}
-              className="rounded-lg border border-slate-200/80 bg-white p-3.5 shadow-sm hover:border-teal-300 transition-all space-y-2.5"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span className="font-extrabold text-xs text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-                  {p.year}
-                </span>
-                <span className="text-[11px] text-slate-400">{t("overview.stage", { n: idx + 1 })}</span>
-              </div>
-
-              {/* Conservative Row */}
-              <div className="flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">{t("overview.conservative")} ({formatRate(p.cRate)})</span>
-                  <span className="font-mono font-bold text-slate-900 text-xs">
-                    {formatAmount(p.cBase, "HKD")}
-                  </span>
-                </div>
-                <span className="font-mono text-[11px] font-semibold text-teal-700">
-                  +{formatAmount(p.cInterest, "HKD")}
-                </span>
-              </div>
-
-              {/* Target 7% Row */}
-              <div className="flex items-center justify-between text-xs bg-emerald-50/50 p-1.5 rounded border border-emerald-100/60">
-                <div>
-                  <span className="text-[10px] font-bold text-emerald-900 uppercase block">{t("overview.target")}</span>
-                  <span className="font-mono font-black text-slate-950 text-xs">
-                    {formatAmount(p.tBase, "HKD")}
-                  </span>
-                </div>
-                <span className="font-mono text-[11px] font-extrabold text-emerald-700">
-                  +{formatAmount(p.tInterest, "HKD")}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <ProjectionPlanner liveBaseCapital={totalPrincipal} />
     </div>
   );
 }
