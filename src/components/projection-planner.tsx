@@ -25,6 +25,46 @@ const YEAR_KEYS = [
   "overview.year6",
 ] as const;
 
+function YearRateInputs({
+  rates,
+  onChange,
+  variant,
+}: {
+  rates: number[];
+  onChange: (index: number, value: string) => void;
+  variant: "conservative" | "target";
+}) {
+  const { t } = useLocale();
+  const inputClass =
+    variant === "conservative"
+      ? "w-full rounded border border-slate-200 px-1.5 py-1 text-[11px] font-mono text-center"
+      : "w-full rounded border border-emerald-200 px-1.5 py-1 text-[11px] font-mono text-center";
+
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+      {rates.map((rate, idx) => (
+        <div key={idx}>
+          <label className="text-[10px] font-bold text-slate-500 uppercase block text-center mb-1">
+            {t(YEAR_KEYS[idx])}
+          </label>
+          <div className="flex items-center gap-0.5">
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              className={inputClass}
+              value={rateToPercentInput(rate)}
+              onChange={(e) => onChange(idx, e.target.value)}
+              aria-label={`${t(YEAR_KEYS[idx])} rate`}
+            />
+            <span className="text-[10px] text-slate-400 shrink-0">%</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
   const { t, formatAmount } = useLocale();
   const baseCapital = liveBaseCapital;
@@ -101,58 +141,31 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-teal-100 bg-teal-50/30 p-3 space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-teal-100 bg-gradient-to-br from-teal-50/40 to-slate-50 p-4 space-y-4">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-teal-800">
               {t("overview.strategyA")}
             </span>
-            <button
-              type="button"
-              className="text-[11px] font-semibold text-teal-700 hover:underline cursor-pointer"
-              onClick={resetConservativeRates}
-            >
-              {t("overview.resetSheetRates")}
-            </button>
-          </div>
-          <p className="text-[11px] text-slate-500">{t("overview.rateHintA")}</p>
-        </div>
-
-        <div className="rounded-lg border border-emerald-100 bg-emerald-50/30 p-3 space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">
-              {t("overview.strategyB", { rate: (avgTargetRate * 100).toFixed(1) })}
-            </span>
-            <div className="flex flex-wrap gap-1">
-              {TARGET_RATE_PRESETS.map((rate) => (
-                <button
-                  key={rate}
-                  type="button"
-                  className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
-                    targetRates.every((r) => Math.abs(r - rate) < 0.0001)
-                      ? "bg-emerald-600 text-white"
-                      : "bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-100"
-                  }`}
-                  onClick={() => applyTargetPreset(rate)}
-                >
-                  {(rate * 100).toFixed(0)}%
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="text-[11px] font-semibold text-teal-700 hover:underline cursor-pointer"
+                onClick={resetConservativeRates}
+              >
+                {t("overview.resetSheetRates")}
+              </button>
+              <span className="badge text-[10px]">{t("overview.lowRisk")}</span>
             </div>
           </div>
-          <p className="text-[11px] text-slate-500">{t("overview.rateHintB")}</p>
-        </div>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-teal-100 bg-gradient-to-br from-teal-50/40 to-slate-50 p-4.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-teal-800">
-              {t("overview.strategyA")}
-            </span>
-            <span className="badge text-[10px]">{t("overview.lowRisk")}</span>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
+          <YearRateInputs
+            rates={conservativeRates}
+            onChange={setConservativeRate}
+            variant="conservative"
+          />
+
+          <div className="flex items-baseline justify-between border-t border-teal-100/80 pt-3">
             <div>
               <span className="text-[11px] text-slate-400">{t("overview.year6Capital")}</span>
               <p className="text-xl font-black text-slate-900 font-mono">
@@ -168,16 +181,37 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 p-4.5">
-          <div className="flex items-center justify-between">
+        <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 p-4 space-y-4">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">
               {t("overview.strategyB", { rate: (avgTargetRate * 100).toFixed(1) })}
             </span>
-            <span className="badge bg-emerald-200 text-emerald-900 text-[10px]">
-              {t("overview.optimized")}
-            </span>
+            <div className="flex items-center gap-2">
+              <div className="flex flex-wrap gap-1">
+                {TARGET_RATE_PRESETS.map((rate) => (
+                  <button
+                    key={rate}
+                    type="button"
+                    className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
+                      targetRates.every((r) => Math.abs(r - rate) < 0.0001)
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-100"
+                    }`}
+                    onClick={() => applyTargetPreset(rate)}
+                  >
+                    {(rate * 100).toFixed(0)}%
+                  </button>
+                ))}
+              </div>
+              <span className="badge bg-emerald-200 text-emerald-900 text-[10px]">
+                {t("overview.optimized")}
+              </span>
+            </div>
           </div>
-          <div className="mt-3 flex items-baseline justify-between">
+
+          <YearRateInputs rates={targetRates} onChange={setTargetRate} variant="target" />
+
+          <div className="flex items-baseline justify-between border-t border-emerald-100/80 pt-3">
             <div>
               <span className="text-[11px] text-slate-400">{t("overview.year6Capital")}</span>
               <p className="text-xl font-black text-emerald-950 font-mono">
@@ -209,21 +243,9 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
 
             <div className="flex items-center justify-between text-xs gap-2">
               <div className="min-w-0 flex-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                <span className="text-[10px] font-bold text-slate-500 uppercase block">
                   {t("overview.conservative")} ({formatRate(row.cRate)})
-                </label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    className="w-16 rounded border border-slate-200 px-1.5 py-0.5 text-[11px] font-mono"
-                    value={rateToPercentInput(row.cRate)}
-                    onChange={(e) => setConservativeRate(idx, e.target.value)}
-                    aria-label={`${t(YEAR_KEYS[idx])} ${t("overview.conservative")}`}
-                  />
-                  <span className="text-[10px] text-slate-400">%</span>
-                </div>
+                </span>
                 <span className="font-mono font-bold text-slate-900 text-xs block mt-1">
                   {formatAmount(row.cBase, "HKD")}
                 </span>
@@ -235,21 +257,9 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
 
             <div className="flex items-center justify-between text-xs bg-emerald-50/50 p-1.5 rounded border border-emerald-100/60 gap-2">
               <div className="min-w-0 flex-1">
-                <label className="text-[10px] font-bold text-emerald-900 uppercase block mb-1">
+                <span className="text-[10px] font-bold text-emerald-900 uppercase block">
                   {t("overview.targetRate", { rate: formatRate(row.tRate) })}
-                </label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    className="w-16 rounded border border-emerald-200 px-1.5 py-0.5 text-[11px] font-mono"
-                    value={rateToPercentInput(row.tRate)}
-                    onChange={(e) => setTargetRate(idx, e.target.value)}
-                    aria-label={`${t(YEAR_KEYS[idx])} ${t("overview.target")}`}
-                  />
-                  <span className="text-[10px] text-emerald-700">%</span>
-                </div>
+                </span>
                 <span className="font-mono font-black text-slate-950 text-xs block mt-1">
                   {formatAmount(row.tBase, "HKD")}
                 </span>
