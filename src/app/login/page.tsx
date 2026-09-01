@@ -14,7 +14,7 @@ function LoginForm() {
       <form action="/api/login" method="post" className="auth-card">
         <p className="eyebrow">Family finance</p>
         <h1>Welcome back</h1>
-        <p className="subtitle">Sign in with your family account. Default password is your username plus 123.</p>
+        <p className="subtitle">Sign in with your family account.</p>
         {error && (
           <p className="error" role="alert">
             That account or password was not recognized.
@@ -38,13 +38,9 @@ function LoginForm() {
             name="password"
             type="password"
             autoComplete="current-password"
-            placeholder="Username + 123"
           />
         </label>
         <button className="button w-full">Sign in</button>
-        <p className="form-note text-slate-500">
-          Example: <strong>Vin</strong> / <strong>Vin123</strong> (admin, can upload Excel)
-        </p>
         <p className="form-note">
           <Link href="/">Back to home</Link>
         </p>
