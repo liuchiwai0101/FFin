@@ -65,14 +65,28 @@
     if (!FFin.requireAuth()) throw new Error("auth");
     FFin.renderShell("current");
 
-    let userFilter = "All";
+    const viewer = FFin.getCurrentUser();
+    const admin = FFin.isAdmin(viewer);
+    let userFilter = admin ? "All" : viewer.ownerKey;
     let bankFilter = "All";
     let sortKey = "ownerName";
     let sortType = "string";
     let sortDir = "asc";
 
+    if (!admin) {
+      const memberRow = document.querySelector(".filters");
+      if (memberRow && memberRow.querySelector("[data-user]")) memberRow.hidden = true;
+      const empty = document.getElementById("empty");
+      if (empty) {
+        empty.querySelector(".subtitle").textContent =
+          "No holdings are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook.";
+        const uploadLink = empty.querySelector("a.btn");
+        if (uploadLink) uploadLink.remove();
+      }
+    }
+
     function rows() {
-      return FFin.loadStore().activeItems.filter((r) => {
+      return FFin.loadVisibleStore().activeItems.filter((r) => {
         if (userFilter !== "All" && r.ownerName !== userFilter) return false;
         if (bankFilter !== "All" && !r.bank.toUpperCase().includes(bankFilter.toUpperCase())) return false;
         return true;
@@ -80,7 +94,7 @@
     }
 
     function render() {
-      const all = FFin.loadStore().activeItems;
+      const all = FFin.loadVisibleStore().activeItems;
       if (!all.length) {
         document.getElementById("empty").hidden = false;
         document.getElementById("panel").hidden = true;

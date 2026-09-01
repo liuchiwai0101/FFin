@@ -11,18 +11,18 @@
     <form class="auth-card" id="login-form">
       <p class="eyebrow">Family finance</p>
       <h1>Welcome back</h1>
-      <p class="subtitle">Sign in, then upload Excel to load data.</p>
+      <p class="subtitle">Sign in with your family account. Default password is your username plus 123.</p>
       <div id="error" class="error" hidden>That account or password was not recognized.</div>
       <label>
-        Account / Email
-        <input name="email" required autocomplete="username" value="Vin" placeholder="Vin" />
+        Username
+        <input name="email" required autocomplete="username" placeholder="Vin, MA, Miki, or BABA" />
       </label>
       <label>
         Password
-        <input name="password" type="password" required autocomplete="current-password" placeholder="admin123" />
+        <input name="password" type="password" required autocomplete="current-password" placeholder="Username + 123" />
       </label>
       <button class="btn" style="width:100%;margin-top:1rem;" type="submit">Sign in</button>
-      <p class="subtitle" style="margin-top:0.85rem;">Hardcoded login: <strong>Vin</strong> / <strong>admin123</strong></p>
+      <p class="subtitle" style="margin-top:0.85rem;">Example: <strong>Vin</strong> / <strong>Vin123</strong> (admin, can upload Excel)</p>
       <p class="subtitle"><a href="./index.html">Back to home</a></p>
     </form>
   </main>

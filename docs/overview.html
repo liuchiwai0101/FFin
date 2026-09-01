@@ -14,13 +14,17 @@
     if (!FFin.requireAuth()) throw new Error("auth");
     FFin.renderShell("overview");
 
-    const store = FFin.loadStore();
+    const store = FFin.loadVisibleStore();
+    const user = FFin.getCurrentUser();
+    const admin = FFin.isAdmin(user);
     if (!store.activeItems.length && !store.historyItems.length) {
       document.getElementById("content").innerHTML = `
         <div class="card">
           <h1>No Excel data loaded</h1>
-          <p class="subtitle">Upload your bank interest workbook to populate this overview.</p>
-          <p style="margin-top:1rem;"><a class="btn" href="./sync.html">Upload Excel</a></p>
+          <p class="subtitle">${admin
+            ? "Upload your bank interest workbook to populate this overview."
+            : "No holdings are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook."}</p>
+          ${admin ? '<p style="margin-top:1rem;"><a class="btn" href="./sync.html">Upload Excel</a></p>' : ""}
         </div>`;
     } else {
       const active = [...store.activeItems].sort((a, b) => b.amount - a.amount);

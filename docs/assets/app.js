@@ -1,7 +1,41 @@
 (() => {
   const STORAGE_KEY = "ffin_deposit_store_v1";
-  const AUTH_KEY = "ffin_auth_ok";
-  const USER = { username: "Vin", email: "vin@family.local", password: "admin123", name: "Vin" };
+  const AUTH_KEY = "ffin_auth_user";
+
+  const APP_USERS = [
+    { id: "vin", username: "Vin", name: "Vin", ownerKey: "Vin", role: "ADMIN" },
+    { id: "ma", username: "MA", name: "MA", ownerKey: "MA", role: "MEMBER" },
+    { id: "miki", username: "Miki", name: "Miki", ownerKey: "Miki", role: "MEMBER" },
+    { id: "baba", username: "BABA", name: "BABA", ownerKey: "BABA", role: "MEMBER" },
+  ];
+
+  function defaultPassword(username) {
+    return `${username}123`;
+  }
+
+  function findUserByCredentials(account, password) {
+    const normalized = String(account || "").trim().toLowerCase();
+    const user = APP_USERS.find(
+      (u) =>
+        u.username.toLowerCase() === normalized ||
+        `${u.username.toLowerCase()}@family.local` === normalized,
+    );
+    if (!user || password !== defaultPassword(user.username)) return null;
+    return user;
+  }
+
+  function getCurrentUser() {
+    const id = localStorage.getItem(AUTH_KEY);
+    return APP_USERS.find((u) => u.id === id) || null;
+  }
+
+  function isAdmin(user) {
+    return user?.role === "ADMIN";
+  }
+
+  function canViewOwner(user, ownerName) {
+    return isAdmin(user) || user.ownerKey === ownerName;
+  }
 
   const EMPTY = { syncedAt: null, activeItems: [], historyItems: [] };
 
@@ -131,21 +165,17 @@
   }
 
   function isLoggedIn() {
-    return localStorage.getItem(AUTH_KEY) === "1";
+    return Boolean(getCurrentUser());
   }
 
   function login(account, password) {
-    const normalized = String(account || "").trim().toLowerCase();
-    const ok =
-      (normalized === USER.username.toLowerCase() || normalized === USER.email) &&
-      password === USER.password;
-    if (!ok) return false;
-    localStorage.setItem(AUTH_KEY, "1");
+    const user = findUserByCredentials(account, password);
+    if (!user) return false;
+    localStorage.setItem(AUTH_KEY, user.id);
     return true;
   }
 
   function logout() {
-    clearStore();
     localStorage.removeItem(AUTH_KEY);
   }
 
@@ -155,6 +185,26 @@
       return false;
     }
     return true;
+  }
+
+  function requireAdmin() {
+    if (!requireAuth()) return false;
+    if (!isAdmin(getCurrentUser())) {
+      location.href = "./overview.html";
+      return false;
+    }
+    return true;
+  }
+
+  function loadVisibleStore() {
+    const store = loadStore();
+    const user = getCurrentUser();
+    if (!user || isAdmin(user)) return store;
+    return {
+      syncedAt: store.syncedAt,
+      activeItems: store.activeItems.filter((item) => canViewOwner(user, item.ownerName)),
+      historyItems: store.historyItems.filter((item) => canViewOwner(user, item.ownerName)),
+    };
   }
 
   function formatAmount(amount, currency = "HKD") {
@@ -203,19 +253,21 @@
 
   function renderShell(active) {
     const bar = document.getElementById("app-shell");
-    if (!bar) return;
+    const user = getCurrentUser();
+    if (!bar || !user) return;
+    const admin = isAdmin(user);
     bar.innerHTML = `
       <header class="topbar">
         <div class="topbar-inner">
           <div style="display:flex;align-items:center;gap:0.6rem;">
             <a class="brand" href="./overview.html"><span class="brand-mark">FF</span> Family Finance</a>
-            <span class="user-pill">${USER.name}</span>
+            <span class="user-pill">${user.name}${admin ? " · Admin" : ""}</span>
           </div>
           <nav class="nav">
             <a href="./overview.html" class="${active === "overview" ? "active" : ""}">Overview</a>
             <a href="./current.html" class="${active === "current" ? "active" : ""}">Current Products</a>
             <a href="./history.html" class="${active === "history" ? "active" : ""}">Interest History</a>
-            <a href="./sync.html" class="${active === "sync" ? "active" : ""}">Sync Excel</a>
+            ${admin ? `<a href="./sync.html" class="${active === "sync" ? "active" : ""}">Sync Excel</a>` : ""}
           </nav>
           <button class="btn-ghost" type="button" id="logout-btn">Sign out</button>
         </div>
@@ -237,14 +289,19 @@
   }
 
   window.FFin = {
-    USER,
+    APP_USERS,
+    getCurrentUser,
+    isAdmin,
+    canViewOwner,
     loadStore,
+    loadVisibleStore,
     saveStore,
     clearStore,
     login,
     logout,
     isLoggedIn,
     requireAuth,
+    requireAdmin,
     parseWorkbook,
     formatAmount,
     formatRate,

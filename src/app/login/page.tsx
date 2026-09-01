@@ -14,7 +14,7 @@ function LoginForm() {
       <form action="/api/login" method="post" className="auth-card">
         <p className="eyebrow">Family finance</p>
         <h1>Welcome back</h1>
-        <p className="subtitle">Sign in with the hardcoded account, then upload Excel to load data.</p>
+        <p className="subtitle">Sign in with your family account. Default password is your username plus 123.</p>
         {error && (
           <p className="error" role="alert">
             That account or password was not recognized.
@@ -22,14 +22,13 @@ function LoginForm() {
         )}
         <input type="hidden" name="next" value={next} />
         <label>
-          Account / Email
+          Username
           <input
             required
             name="email"
             type="text"
             autoComplete="username"
-            placeholder="Vin"
-            defaultValue="Vin"
+            placeholder="Vin, MA, Miki, or BABA"
           />
         </label>
         <label>
@@ -39,12 +38,12 @@ function LoginForm() {
             name="password"
             type="password"
             autoComplete="current-password"
-            placeholder="admin123"
+            placeholder="Username + 123"
           />
         </label>
         <button className="button w-full">Sign in</button>
         <p className="form-note text-slate-500">
-          Hardcoded login: <strong>Vin</strong> / <strong>admin123</strong>
+          Example: <strong>Vin</strong> / <strong>Vin123</strong> (admin, can upload Excel)
         </p>
         <p className="form-note">
           <Link href="/">Back to home</Link>

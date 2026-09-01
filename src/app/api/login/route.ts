@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   SESSION_COOKIE,
   createSessionToken,
-  credentialsMatch,
 } from "@/lib/session";
+import { findUserByCredentials } from "@/lib/users";
 
 export const runtime = "nodejs";
 
@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
   const nextRaw = String(form.get("next") ?? "/app") || "/app";
   const next = nextRaw.startsWith("/") ? nextRaw : "/app";
 
-  if (!credentialsMatch(account, password)) {
+  const user = findUserByCredentials(account, password);
+  if (!user) {
     const url = new URL("/login", request.url);
     url.searchParams.set("error", "1");
     url.searchParams.set("next", next);
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
   }
 
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, createSessionToken(), {
+  jar.set(SESSION_COOKIE, createSessionToken(user.id), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

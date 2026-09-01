@@ -40,7 +40,7 @@
   <script src="./assets/xlsx.full.min.js"></script>
   <script src="./assets/app.js"></script>
   <script>
-    if (!FFin.requireAuth()) throw new Error("auth");
+    if (!FFin.requireAdmin()) throw new Error("auth");
     FFin.renderShell("sync");
 
     function refresh() {

@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/lib/access";
+import { requireAdmin, requireUser } from "@/lib/access";
 import { deleteDepositById, upsertDepositRecord } from "@/lib/deposit-store";
 import { parseExcelBuffer, syncExcelToStore, syncItemsToStore } from "@/lib/excel-data";
+import { canViewOwner, isAdmin } from "@/lib/users";
 
 function value(form: FormData, key: string) {
   return String(form.get(key) ?? "").trim();
@@ -17,7 +18,7 @@ function refreshDepositPaths() {
 }
 
 export async function uploadExcelAction(formData: FormData) {
-  await requireUser();
+  await requireAdmin();
   const file = formData.get("file") as File | null;
   if (!file || file.size === 0) {
     throw new Error("Please select a valid Excel file (.xlsx) to upload.");
@@ -55,7 +56,7 @@ export async function syncExcelAction() {
 
 export async function createDepositRecord(form: FormData) {
   const user = await requireUser();
-  const ownerName = value(form, "ownerName") || user.name || "Vin";
+  const ownerName = isAdmin(user) ? value(form, "ownerName") || user.ownerKey : user.ownerKey;
   const bank = value(form, "bank");
   const product = value(form, "product");
   const amount = parseFloat(value(form, "amount"));
@@ -96,7 +97,16 @@ export async function createDepositRecord(form: FormData) {
 }
 
 export async function deleteDepositRecord(form: FormData) {
-  await requireUser();
-  deleteDepositById(value(form, "id"));
+  const user = await requireUser();
+  const id = value(form, "id");
+  if (!isAdmin(user)) {
+    const { loadDepositStore } = await import("@/lib/deposit-store");
+    const store = loadDepositStore();
+    const target = [...store.activeItems, ...store.historyItems].find((r) => r.id === id);
+    if (!target || !canViewOwner(user, target.ownerName)) {
+      throw new Error("You can only delete your own records.");
+    }
+  }
+  deleteDepositById(id);
   refreshDepositPaths();
 }

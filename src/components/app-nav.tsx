@@ -1,19 +1,18 @@
 import Link from "next/link";
 import { SignOutButton } from "@/components/sign-out-button";
+import { isAdmin, type AppUser } from "@/lib/users";
 
-const links = [
+const memberLinks = [
   ["Overview", "/app"],
   ["Current Products", "/app/current"],
   ["Interest History", "/app/history"],
-  ["Sync Excel", "/app/sync"],
-];
+] as const;
 
-export function AppNav({
-  userName,
-}: {
-  userName?: string | null;
-  systemRole?: string;
-}) {
+const adminLinks = [...memberLinks, ["Sync Excel", "/app/sync"]] as const;
+
+export function AppNav({ user }: { user: AppUser }) {
+  const links = isAdmin(user) ? adminLinks : memberLinks;
+
   return (
     <header className="app-topbar">
       <div className="app-topbar-container">
@@ -26,11 +25,10 @@ export function AppNav({
               Family Finance
             </span>
           </Link>
-          {userName && (
-            <span className="text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded-md">
-              {userName}
-            </span>
-          )}
+          <span className="text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded-md">
+            {user.name}
+            {isAdmin(user) ? " · Admin" : ""}
+          </span>
         </div>
 
         <nav className="flex items-center flex-wrap gap-1">

@@ -7,7 +7,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const user = await requireStaff();
   return (
     <div className="app-shell">
-      <AppNav userName={user.name} />
+      <AppNav user={user} />
       <main className="app-main">{children}</main>
     </div>
   );

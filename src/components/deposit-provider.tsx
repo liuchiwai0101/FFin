@@ -10,6 +10,8 @@ import {
 } from "react";
 import type { DepositItem } from "@/lib/excel-data";
 import type { DepositRecord, DepositStore } from "@/lib/deposit-store";
+import { useViewer } from "@/components/user-context";
+import { canViewOwner, isAdmin } from "@/lib/users";
 
 const STORAGE_KEY = "ffin_deposit_store_v1";
 
@@ -116,23 +118,37 @@ function subscribeNoop() {
 }
 
 export function DepositProvider({ children }: { children: ReactNode }) {
+  const viewer = useViewer();
   const store = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
   const ready = useSyncExternalStore(subscribeNoop, () => true, () => false);
 
+  const visibleStore = useMemo<DepositStore>(() => {
+    if (isAdmin(viewer)) return store;
+    return {
+      syncedAt: store.syncedAt,
+      activeItems: store.activeItems.filter((item) => canViewOwner(viewer, item.ownerName)),
+      historyItems: store.historyItems.filter((item) => canViewOwner(viewer, item.ownerName)),
+    };
+  }, [store, viewer]);
+
   const replaceStore = useCallback((next: DepositStore) => {
+    if (!isAdmin(viewer)) return;
     persist(normalizeStore(next));
-  }, []);
+  }, [viewer]);
 
   const clearStore = useCallback(() => {
+    if (!isAdmin(viewer)) return;
     clearUploadedExcelData();
-  }, []);
+  }, [viewer]);
 
   const upsertRecord = useCallback((record: DepositItem & { isCurrent: boolean; id?: string }) => {
     const prev = getClientSnapshot();
+    const ownerName = isAdmin(viewer) ? record.ownerName : viewer.ownerKey;
     const id =
       record.id ||
-      `${record.isCurrent ? "active" : "history"}-${Date.now()}-${record.ownerName}-${record.bank}`;
-    const item: DepositItem = { ...record, id };
+      `${record.isCurrent ? "active" : "history"}-${Date.now()}-${ownerName}-${record.bank}`;
+    const item: DepositItem = { ...record, id, ownerName };
+    if (!isAdmin(viewer) && !canViewOwner(viewer, ownerName)) return;
     persist({
       syncedAt: new Date().toISOString(),
       activeItems: record.isCurrent
@@ -142,30 +158,32 @@ export function DepositProvider({ children }: { children: ReactNode }) {
         ? [...prev.historyItems.filter((r) => r.id !== id), item]
         : prev.historyItems,
     });
-  }, []);
+  }, [viewer]);
 
   const deleteRecord = useCallback((id: string) => {
     const prev = getClientSnapshot();
+    const target = [...prev.activeItems, ...prev.historyItems].find((r) => r.id === id);
+    if (!target || !canViewOwner(viewer, target.ownerName)) return;
     persist({
       syncedAt: new Date().toISOString(),
       activeItems: prev.activeItems.filter((r) => r.id !== id),
       historyItems: prev.historyItems.filter((r) => r.id !== id),
     });
-  }, []);
+  }, [viewer]);
 
   const activeRecords = useMemo(
-    () => store.activeItems.map((item, i) => toRecord(item, `active-${i}`)),
-    [store.activeItems],
+    () => visibleStore.activeItems.map((item, i) => toRecord(item, `active-${i}`)),
+    [visibleStore.activeItems],
   );
   const historyRecords = useMemo(
-    () => store.historyItems.map((item, i) => toRecord(item, `history-${i}`)),
-    [store.historyItems],
+    () => visibleStore.historyItems.map((item, i) => toRecord(item, `history-${i}`)),
+    [visibleStore.historyItems],
   );
 
   const value = useMemo(
     () => ({
       ready,
-      store,
+      store: visibleStore,
       activeRecords,
       historyRecords,
       replaceStore,
@@ -173,7 +191,7 @@ export function DepositProvider({ children }: { children: ReactNode }) {
       upsertRecord,
       deleteRecord,
     }),
-    [ready, store, activeRecords, historyRecords, replaceStore, clearStore, upsertRecord, deleteRecord],
+    [ready, visibleStore, activeRecords, historyRecords, replaceStore, clearStore, upsertRecord, deleteRecord],
   );
 
   return <DepositContext.Provider value={value}>{children}</DepositContext.Provider>;

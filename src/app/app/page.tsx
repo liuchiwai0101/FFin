@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { SortableTable } from "@/components/sortable-table";
 import { useDepositData } from "@/components/deposit-provider";
+import { useIsAdmin, useViewer } from "@/components/user-context";
 import { formatAmount, formatRate } from "@/lib/finance";
 
 export default function OverviewPage() {
+  const admin = useIsAdmin();
+  const viewer = useViewer();
   const { ready, activeRecords: activeRaw, historyRecords: historyRaw, store } = useDepositData();
   const activeRecords = [...activeRaw].sort((a, b) => b.amount - a.amount);
   const historyRecords = [...historyRaw].sort(
@@ -21,11 +24,15 @@ export default function OverviewPage() {
       <div className="card p-8 max-w-xl space-y-3">
         <h1 className="text-2xl font-bold text-slate-900">No Excel data loaded</h1>
         <p className="text-sm text-slate-600">
-          Upload your bank interest workbook to populate this overview.
+          {admin
+            ? "Upload your bank interest workbook to populate this overview."
+            : "No holdings are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook."}
         </p>
-        <Link className="button inline-flex" href="/app/sync">
-          Upload Excel
-        </Link>
+        {admin && (
+          <Link className="button inline-flex" href="/app/sync">
+            Upload Excel
+          </Link>
+        )}
       </div>
     );
   }
@@ -40,7 +47,7 @@ export default function OverviewPage() {
   const weightedAvgRate = totalPrincipal > 0 ? weightedRateSum / totalPrincipal : 0;
 
   // Unique Users & Banks
-  const users = ["MA", "Vin", "Miki", "BABA"];
+  const users = admin ? ["MA", "Vin", "Miki", "BABA"] : [viewer.ownerKey];
   const banks = ["SC", "HS", "HSBC", "ICBC", "BOC"];
 
   // Normalize bank name for aggregation
@@ -164,9 +171,11 @@ export default function OverviewPage() {
           <Link className="button-secondary text-xs" href="/app/current">
             View Current Products &rarr;
           </Link>
-          <Link className="button text-xs" href="/app/sync">
-            Upload / Sync Excel
-          </Link>
+          {admin && (
+            <Link className="button text-xs" href="/app/sync">
+              Upload / Sync Excel
+            </Link>
+          )}
         </div>
       </div>
 

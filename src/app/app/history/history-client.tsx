@@ -4,11 +4,15 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SortableTable } from "@/components/sortable-table";
 import { useDepositData } from "@/components/deposit-provider";
+import { useViewer } from "@/components/user-context";
 import { endedYear, formatAmount, formatDate, formatRate } from "@/lib/finance";
+import { isAdmin } from "@/lib/users";
 
 export default function HistoryPage() {
   const params = useSearchParams();
-  const userFilter = params.get("user") || "All";
+  const viewer = useViewer();
+  const admin = isAdmin(viewer);
+  const userFilter = admin ? params.get("user") || "All" : viewer.ownerKey;
   const bankFilter = params.get("bank") || "All";
   const yearFilter = params.get("year") || "All";
   const searchFilter = (params.get("search") || "").toLowerCase();
@@ -72,10 +76,16 @@ export default function HistoryPage() {
     return (
       <div className="card p-8 max-w-xl space-y-3">
         <h1 className="text-2xl font-bold text-slate-900">No history loaded</h1>
-        <p className="text-sm text-slate-600">Upload Excel to load matured interest records.</p>
-        <Link className="button inline-flex" href="/app/sync">
-          Upload Excel
-        </Link>
+        <p className="text-sm text-slate-600">
+          {admin
+            ? "Upload Excel to load matured interest records."
+            : "No matured interest records are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook."}
+        </p>
+        {admin && (
+          <Link className="button inline-flex" href="/app/sync">
+            Upload Excel
+          </Link>
+        )}
       </div>
     );
   }
@@ -101,7 +111,8 @@ export default function HistoryPage() {
 
       {/* Filter Toolbar */}
       <div className="card space-y-4 p-4 shadow-sm">
-        {/* Member filter */}
+        {/* Member filter (admin only) */}
+        {admin && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-16">Member:</span>
           <div className="flex flex-wrap gap-1.5">
@@ -120,6 +131,7 @@ export default function HistoryPage() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Bank filter */}
         <div className="flex flex-wrap items-center gap-2">

@@ -5,20 +5,21 @@ import { redirect } from "next/navigation";
 import {
   SESSION_COOKIE,
   createSessionToken,
-  credentialsMatch,
 } from "@/lib/session";
+import { findUserByCredentials } from "@/lib/users";
 
 export async function loginAction(formData: FormData) {
   const account = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "/app") || "/app";
 
-  if (!credentialsMatch(account, password)) {
+  const user = findUserByCredentials(account, password);
+  if (!user) {
     redirect(`/login?error=1&next=${encodeURIComponent(next)}`);
   }
 
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, createSessionToken(), {
+  jar.set(SESSION_COOKIE, createSessionToken(user.id), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

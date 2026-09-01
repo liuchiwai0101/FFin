@@ -420,10 +420,10 @@ th button.active { color: var(--teal); }
     <h1>Welcome back</h1>
     <p class="subtitle">Single HTML file — upload Excel in the browser. No server needed.</p>
     <div id="login-error" class="error" hidden>That account or password was not recognized.</div>
-    <label>Account / Email<input name="email" required value="Vin" autocomplete="username" /></label>
-    <label>Password<input name="password" type="password" required autocomplete="current-password" placeholder="admin123" /></label>
+    <label>Username<input name="email" required autocomplete="username" placeholder="Vin, MA, Miki, or BABA" /></label>
+    <label>Password<input name="password" type="password" required autocomplete="current-password" placeholder="Username + 123" /></label>
     <button class="btn" style="width:100%;margin-top:1rem;" type="submit">Sign in</button>
-    <p class="subtitle" style="margin-top:0.85rem;">Login: <strong>Vin</strong> / <strong>admin123</strong></p>
+    <p class="subtitle" style="margin-top:0.85rem;">Example: <strong>Vin</strong> / <strong>Vin123</strong> (admin, can upload Excel)</p>
   </form>
 </div>
 
@@ -508,8 +508,30 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 <script>
 (() => {
   const STORAGE_KEY = "ffin_deposit_store_v1";
-  const AUTH_KEY = "ffin_auth_ok";
-  const USER = { username: "Vin", email: "vin@family.local", password: "admin123", name: "Vin" };
+  const AUTH_KEY = "ffin_auth_user";
+
+  const APP_USERS = [
+    { id: "vin", username: "Vin", name: "Vin", ownerKey: "Vin", role: "ADMIN" },
+    { id: "ma", username: "MA", name: "MA", ownerKey: "MA", role: "MEMBER" },
+    { id: "miki", username: "Miki", name: "Miki", ownerKey: "Miki", role: "MEMBER" },
+    { id: "baba", username: "BABA", name: "BABA", ownerKey: "BABA", role: "MEMBER" },
+  ];
+
+  function defaultPassword(username) { return username + "123"; }
+  function findUserByCredentials(account, password) {
+    const normalized = String(account || "").trim().toLowerCase();
+    const user = APP_USERS.find((u) =>
+      u.username.toLowerCase() === normalized ||
+      u.username.toLowerCase() + "@family.local" === normalized);
+    if (!user || password !== defaultPassword(user.username)) return null;
+    return user;
+  }
+  function getCurrentUser() {
+    const id = localStorage.getItem(AUTH_KEY);
+    return APP_USERS.find((u) => u.id === id) || null;
+  }
+  function isAdmin(user) { return user?.role === "ADMIN"; }
+  function canViewOwner(user, ownerName) { return isAdmin(user) || user.ownerKey === ownerName; }
   const EMPTY = { syncedAt: null, activeItems: [], historyItems: [] };
 
   function excelDateToDate(serial) {
@@ -609,14 +631,24 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   function saveStore(store) { localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); }
   function clearStore() { localStorage.removeItem(STORAGE_KEY); }
-  function isLoggedIn() { return localStorage.getItem(AUTH_KEY) === "1"; }
+  function isLoggedIn() { return Boolean(getCurrentUser()); }
   function login(account, password) {
-    const n = String(account || "").trim().toLowerCase();
-    const ok = (n === USER.username.toLowerCase() || n === USER.email) && password === USER.password;
-    if (ok) localStorage.setItem(AUTH_KEY, "1");
-    return ok;
+    const user = findUserByCredentials(account, password);
+    if (!user) return false;
+    localStorage.setItem(AUTH_KEY, user.id);
+    return true;
   }
-  function logout() { clearStore(); localStorage.removeItem(AUTH_KEY); }
+  function logout() { localStorage.removeItem(AUTH_KEY); }
+  function loadVisibleStore() {
+    const store = loadStore();
+    const user = getCurrentUser();
+    if (!user || isAdmin(user)) return store;
+    return {
+      syncedAt: store.syncedAt,
+      activeItems: store.activeItems.filter((item) => canViewOwner(user, item.ownerName)),
+      historyItems: store.historyItems.filter((item) => canViewOwner(user, item.ownerName)),
+    };
+  }
 
   function formatAmount(amount, currency) {
     currency = currency || "HKD";
@@ -673,13 +705,23 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   let historySort = { key: "fromDate", type: "date", dir: "asc" };
 
   function showApp() {
+    const user = getCurrentUser();
+    if (!user) return showLogin();
     document.getElementById("login-view").hidden = true;
     document.getElementById("app-view").hidden = false;
-    document.getElementById("user-pill").textContent = USER.name;
+    document.getElementById("user-pill").textContent = user.name + (isAdmin(user) ? " · Admin" : "");
+    document.querySelectorAll("#nav-tabs a[data-tab='sync']").forEach((el) => {
+      el.hidden = !isAdmin(user);
+    });
+    if (!isAdmin(user)) {
+      currentUserFilter = user.ownerKey;
+      historyUserFilter = user.ownerKey;
+    }
     refreshSync();
     renderOverview();
     renderCurrent();
     renderHistory();
+    switchTab(isAdmin(user) ? "sync" : "overview");
   }
 
   function showLogin() {
@@ -705,10 +747,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   function renderOverview() {
-    const store = loadStore();
+    const user = getCurrentUser();
+    const admin = isAdmin(user);
+    const store = loadVisibleStore();
     const el = document.getElementById("tab-overview");
     if (!store.activeItems.length && !store.historyItems.length) {
-      el.innerHTML = '<div class="card"><h1>No Excel data loaded</h1><p class="subtitle">Upload on Sync Excel first.</p></div>';
+      el.innerHTML = '<div class="card"><h1>No Excel data loaded</h1><p class="subtitle">' +
+        (admin ? "Upload on Sync Excel first." : "No holdings are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook.") +
+        "</p></div>";
       return;
     }
     const active = store.activeItems.slice().sort((a, b) => b.amount - a.amount);
@@ -718,7 +764,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const totalHistoryInterest = history.reduce((s, r) => s + (r.interest || 0), 0);
     const weightedAvgRate = totalPrincipal > 0
       ? active.reduce((s, r) => s + r.amount * (r.rate || 0), 0) / totalPrincipal : 0;
-    const users = ["MA", "Vin", "Miki", "BABA"];
+    const users = admin ? ["MA", "Vin", "Miki", "BABA"] : [user.ownerKey];
     const banks = ["SC", "HS", "HSBC", "ICBC", "BOC"];
     const bankUserMatrix = {};
     const userTotals = { MA: 0, Vin: 0, Miki: 0, BABA: 0 };
@@ -785,10 +831,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   function renderCurrent() {
-    const store = loadStore();
+    const user = getCurrentUser();
+    const admin = isAdmin(user);
+    const store = loadVisibleStore();
     const el = document.getElementById("tab-current");
     if (!store.activeItems.length) {
-      el.innerHTML = '<div class="card"><h1>No current products</h1><p class="subtitle">Upload Excel on Sync first.</p></div>';
+      el.innerHTML = '<div class="card"><h1>No current products</h1><p class="subtitle">' +
+        (admin ? "Upload Excel on Sync first." : "No holdings are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook.") +
+        "</p></div>";
       return;
     }
     let filtered = store.activeItems.filter((r) => {
@@ -804,13 +854,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const principal = filtered.reduce((s, r) => s + r.amount, 0);
     const interest = filtered.reduce((s, r) => s + (r.interest || 0), 0);
     const maturity = filtered.reduce((s, r) => s + (r.totalAmount || r.amount), 0);
-    const users = ["All", "MA", "Vin", "Miki"];
+    const users = admin ? ["All", "MA", "Vin", "Miki"] : [];
     const banks = ["All", "SC", "HS", "HSBC", "ICBC", "BOC"];
     el.innerHTML =
       "<div><p class=\"eyebrow\">Active Portfolio</p><h1>Current Products</h1></div>" +
-      "<div class=\"card\"><div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">MEMBER</span>" +
-      users.map((u) => "<button class=\"chip" + (currentUserFilter === u ? " active" : "") + "\" data-cuser=\"" + u + "\">" + u + "</button>").join("") +
-      "</div><div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">BANK</span>" +
+      "<div class=\"card\">" + (admin
+        ? "<div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">MEMBER</span>" +
+          users.map((u) => "<button class=\"chip" + (currentUserFilter === u ? " active" : "") + "\" data-cuser=\"" + u + "\">" + u + "</button>").join("") +
+          "</div>"
+        : "") +
+      "<div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">BANK</span>" +
       banks.map((b) => "<button class=\"chip" + (currentBankFilter === b ? " active" : "") + "\" data-cbank=\"" + b + "\">" + b + "</button>").join("") +
       "</div></div>" +
       "<div class=\"grid grid-3\"><div class=\"card\"><span class=\"kpi-label\">Filtered Principal</span><p class=\"kpi-value\">" + formatAmount(principal) + "</p></div>" +
@@ -847,10 +900,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   function renderHistory() {
-    const store = loadStore();
+    const user = getCurrentUser();
+    const admin = isAdmin(user);
+    const store = loadVisibleStore();
     const el = document.getElementById("tab-history");
     if (!store.historyItems.length) {
-      el.innerHTML = '<div class="card"><h1>No history loaded</h1><p class="subtitle">Upload Excel on Sync first.</p></div>';
+      el.innerHTML = '<div class="card"><h1>No history loaded</h1><p class="subtitle">' +
+        (admin ? "Upload Excel on Sync first." : "No matured interest records are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook.") +
+        "</p></div>";
       return;
     }
     let filtered = store.historyItems.map((r, i) => Object.assign({}, r, { seq: i + 1 })).filter((r) => {
@@ -873,7 +930,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       .reduce((s, r) => s + r.amount, 0);
     const interest = filtered.reduce((s, r) => s + (r.interest || 0), 0);
     const avg = filtered.length ? filtered.reduce((s, r) => s + (r.rate || 0), 0) / filtered.length : 0;
-    const users = ["All", "MA", "Vin", "Miki", "BABA"];
+    const users = admin ? ["All", "MA", "Vin", "Miki", "BABA"] : [];
     const banks = ["All", "BOC", "HS", "SC", "HSBC", "ICBC"];
     const years = ["All"].concat(
       Array.from(new Set(store.historyItems.map((r) => endedYear(r.toDate)).filter((y) => y !== null)))
@@ -885,9 +942,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     el.innerHTML =
       "<div><p class=\"eyebrow\">Historical Returns</p><h1>Interest History</h1></div>" +
-      "<div class=\"card\"><div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">MEMBER</span>" +
-      users.map((u) => "<button class=\"chip" + (historyUserFilter === u ? " active" : "") + "\" data-huser=\"" + u + "\">" + u + "</button>").join("") +
-      "</div><div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">BANK</span>" +
+      "<div class=\"card\">" + (admin
+        ? "<div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">MEMBER</span>" +
+          users.map((u) => "<button class=\"chip" + (historyUserFilter === u ? " active" : "") + "\" data-huser=\"" + u + "\">" + u + "</button>").join("") +
+          "</div>"
+        : "") +
+      "<div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">BANK</span>" +
       banks.map((b) => "<button class=\"chip" + (historyBankFilter === b ? " active" : "") + "\" data-hbank=\"" + b + "\">" + b + "</button>").join("") +
       "</div><div class=\"filters\"><span class=\"muted\" style=\"font-size:0.75rem;font-weight:800;\">ENDED YEAR</span>" +
       years.map((y) => "<button class=\"chip" + (historyYearFilter === y ? " active" : "") + "\" data-hyear=\"" + y + "\">" + y + "</button>").join("") +
@@ -935,7 +995,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return;
     }
     showApp();
-    switchTab("sync");
   });
 
   document.getElementById("logout-btn").addEventListener("click", () => {
@@ -946,6 +1005,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   document.querySelectorAll("#nav-tabs a").forEach((a) => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
+      if (a.dataset.tab === "sync" && !isAdmin(getCurrentUser())) {
+        switchTab("overview");
+        return;
+      }
       switchTab(a.dataset.tab);
       if (a.dataset.tab === "overview") renderOverview();
       if (a.dataset.tab === "current") renderCurrent();
@@ -956,6 +1019,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   document.getElementById("upload-form").addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (!isAdmin(getCurrentUser())) return;
     document.getElementById("sync-err").hidden = true;
     document.getElementById("sync-msg").hidden = true;
     const file = e.currentTarget.file.files[0];
@@ -985,6 +1049,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   });
 
   document.getElementById("clear-btn").addEventListener("click", () => {
+    if (!isAdmin(getCurrentUser())) return;
     clearStore();
     refreshSync();
     renderOverview();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/session";
+import { isAdmin } from "@/lib/users";
 import { parseExcelBuffer, syncItemsToStore } from "@/lib/excel-data";
 
 export const runtime = "nodejs";
@@ -8,6 +9,9 @@ export async function POST(request: NextRequest) {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isAdmin(user)) {
+    return NextResponse.json({ error: "Only admin can upload Excel." }, { status: 403 });
   }
 
   const form = await request.formData();
