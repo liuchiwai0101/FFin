@@ -18,6 +18,7 @@ const en = {
     exportJpg: "Export JPG",
     exportJpgHint: "Save this page as a single color JPG image",
     exporting: "Exporting…",
+    exportFailed: "Export failed. Try again.",
   },
   lang: { en: "En", zh: "中文" },
   nav: {
@@ -230,6 +231,7 @@ const zh = {
     exportJpg: "匯出 JPG",
     exportJpgHint: "將此頁面儲存為單張彩色 JPG 圖片",
     exporting: "匯出中…",
+    exportFailed: "匯出失敗，請重試。",
   },
   lang: { en: "En", zh: "中文" },
   nav: {

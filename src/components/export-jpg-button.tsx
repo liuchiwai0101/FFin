@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { domToJpeg } from "modern-screenshot";
 import { useLocale } from "@/lib/i18n/locale-provider";
 
 function getExportRoot(): HTMLElement {
@@ -16,66 +17,90 @@ function downloadFilename(): string {
   return `family-finance-${date}.jpg`;
 }
 
+function exportScale(root: HTMLElement): number {
+  const maxDimension = 8192;
+  const preferred = Math.min(2, window.devicePixelRatio || 1);
+  const height = root.scrollHeight * preferred;
+  const width = root.scrollWidth * preferred;
+  if (height <= maxDimension && width <= maxDimension) return preferred;
+  return Math.min(maxDimension / root.scrollHeight, maxDimension / root.scrollWidth, 1);
+}
+
+function downloadDataUrl(dataUrl: string, filename: string) {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 export function ExportJpgButton({ className = "" }: { className?: string }) {
   const { t } = useLocale();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleExport() {
     if (busy) return;
     setBusy(true);
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const root = getExportRoot();
+    setError(null);
 
-      const canvas = await html2canvas(root, {
-        useCORS: true,
-        scale: 2,
+    try {
+      const root = getExportRoot();
+      window.scrollTo(0, 0);
+
+      const dataUrl = await domToJpeg(root, {
+        quality: 0.92,
+        scale: exportScale(root),
         backgroundColor: "#f8fafc",
-        logging: false,
-        width: root.scrollWidth,
-        height: root.scrollHeight,
-        windowWidth: root.scrollWidth,
-        windowHeight: root.scrollHeight,
-        onclone: (doc) => {
-          doc.querySelectorAll(".no-print").forEach((el) => {
-            (el as HTMLElement).style.display = "none";
-          });
-        },
+        filter: (node) => !(node instanceof Element && node.classList.contains("no-print")),
       });
 
-      const link = document.createElement("a");
-      link.href = canvas.toDataURL("image/jpeg", 0.92);
-      link.download = downloadFilename();
-      link.click();
+      if (!dataUrl.startsWith("data:image/jpeg")) {
+        throw new Error("Failed to create JPEG");
+      }
+
+      downloadDataUrl(dataUrl, downloadFilename());
+    } catch (err) {
+      console.error("Export JPG failed:", err);
+      setError(t("common.exportFailed"));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <button
-      type="button"
-      className={`no-print inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 cursor-pointer disabled:cursor-wait disabled:opacity-60 ${className}`}
-      onClick={handleExport}
-      disabled={busy}
-      title={t("common.exportJpgHint")}
-      aria-label={t("common.exportJpg")}
-    >
-      <svg
-        aria-hidden="true"
-        className="h-3.5 w-3.5 text-slate-500"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+    <div className={`no-print flex flex-col items-end gap-0.5 ${className}`}>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 cursor-pointer disabled:cursor-wait disabled:opacity-60"
+        onClick={handleExport}
+        disabled={busy}
+        title={t("common.exportJpgHint")}
+        aria-label={t("common.exportJpg")}
       >
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-        <circle cx="8.5" cy="8.5" r="1.5" />
-        <polyline points="21 15 16 10 5 21" />
-      </svg>
-      {busy ? t("common.exporting") : t("common.exportJpg")}
-    </button>
+        <svg
+          aria-hidden="true"
+          className="h-3.5 w-3.5 text-slate-500"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+        {busy ? t("common.exporting") : t("common.exportJpg")}
+      </button>
+      {error && (
+        <span className="text-[10px] font-semibold text-rose-600 max-w-[10rem] text-right">
+          {error}
+        </span>
+      )}
+    </div>
   );
 }
