@@ -4,37 +4,39 @@ Next.js app with hardcoded login and Excel upload (no database required).
 
 **Login:** `Vin` / `Vin123`
 
-> **Mainland China:** `*.vercel.app` is blocked, and Zeabur is paid. The **free** production site is GitHub Pages (already live). Do not use Vercel, Netlify, Cloudflare Pages, or Zeabur.
+> **Mainland China:** `*.vercel.app` is blocked, and Zeabur is paid. The **free** production site is GitHub Pages (same as [News](https://liuchiwai0101.github.io/News/)).
 
-## Free production (China) — already live
+## Free production URL
 
-**GitHub Pages:** [https://liuchiwai0101.github.io/FFin/](https://liuchiwai0101.github.io/FFin/)  
-**Login:** Vin / Vin123
+Open **this exact address** (the `/FFin/` path is required):
 
-This is the static `docs/` app (same pattern as [News](https://liuchiwai0101.github.io/News/)). $0, no Node server, no credit card. Pushes to `main` that touch `docs/` publish automatically.
+**https://liuchiwai0101.github.io/FFin/**
 
-If `github.io` is slow from your network, use the same `docs/` folder on a China static host:
+`https://liuchiwai0101.github.io` with no `/FFin/` is a 404. That is the empty user site, not this app.
 
-| Platform | Cost | Notes |
-|----------|------|--------|
-| [Gitee Pages](https://gitee.com) | Free | Import this GitHub repo → Pages from `docs/` or `gh-pages`. Fast on mainland broadband. |
-| [Sealos](https://cloud.sealos.io) static | Free (small traffic) | Drag-and-drop the `docs/` folder. China CDN. |
+## If you see “There isn't a GitHub Pages site here”
 
-## GitHub Pages setup
+The `gh-pages` files are already in the repo. GitHub still returns 404 until **both** of these are true (News already has them):
 
-Free github.io hosting needs a **public** repo (News is public). Private Pages requires GitHub Pro.
-
-1. **Settings → General → Danger zone → Change visibility → Public**
-2. **Settings → Pages → Build and deployment**
+1. **Make the repo public** (free github.io does not work on a private repo)
+   - GitHub → **FFin** → **Settings** → scroll to **Danger zone**
+   - **Change visibility** → **Public**
+2. **Turn on Pages**
+   - **Settings → Pages → Build and deployment**
    - Source: **Deploy from a branch**
-   - Branch: **`gh-pages`** / **`/(root)`**
-3. **About → Website:** `https://liuchiwai0101.github.io/FFin/`
+   - Branch: **`gh-pages`** / **`/(root)`** → **Save**
+3. Wait about a minute, then open https://liuchiwai0101.github.io/FFin/
 
-Local preview of the same static app:
+**About → Website** should be `https://liuchiwai0101.github.io/FFin/` (not Vercel).
 
-```bash
-npx --yes serve docs -p 4173
-```
+This repo is currently **private**, which is why github.io 404s. News works because it is **public**.
+
+## Gitee Pages (free, often faster in China)
+
+If github.io is slow after it is live:
+
+1. Import this GitHub repo on [gitee.com](https://gitee.com)
+2. **服务 → Gitee Pages** from `docs/` or `gh-pages`
 
 ## Portable single HTML (offline, also free)
 
@@ -51,18 +53,18 @@ npm run dev
 
 Open http://localhost:3000 → Sign in → Sync Excel → upload `Summary.xlsx`.
 
-## Optional: Next.js on a paid / VPS host
+Local preview of the GitHub Pages app:
 
-The full Next.js app (cookie login, API routes) needs a Node.js server. There is no reliable **free** host that both runs Next.js and is reachable from mainland China. If you later want that stack:
+```bash
+npx --yes serve docs -p 4173
+```
+
+## Optional: Next.js on a VPS
+
+The full Next.js app needs a Node.js server. There is no reliable **free** host that both runs Next.js and is reachable from mainland China.
 
 ```bash
 cp .env.example .env
 # set AUTH_SECRET to a long random string
 docker compose up -d --build
 ```
-
-Set `AUTH_SECRET` (required) and `APP_URL` to your HTTPS URL. The image listens on `0.0.0.0:3000`.
-
-## Vercel (blocked in mainland China)
-
-Previous URL: [https://ffin-silk.vercel.app](https://ffin-silk.vercel.app) — not reachable from mainland China.
