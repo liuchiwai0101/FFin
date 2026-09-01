@@ -6,7 +6,6 @@ import { formatRate } from "@/lib/finance";
 import {
   DEFAULT_CONSERVATIVE_RATES,
   DEFAULT_TARGET_RATE,
-  SHEET_BASE_CAPITAL,
   TARGET_RATE_PRESETS,
   buildProjectionRows,
   percentToRate,
@@ -28,7 +27,7 @@ const YEAR_KEYS = [
 
 export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
   const { t, formatAmount } = useLocale();
-  const baseCapital = liveBaseCapital > 0 ? liveBaseCapital : SHEET_BASE_CAPITAL;
+  const baseCapital = liveBaseCapital;
 
   const [conservativeRates, setConservativeRates] = useState<number[]>([
     ...DEFAULT_CONSERVATIVE_RATES,

@@ -56,6 +56,9 @@ export default function OverviewPage() {
 
   // Total metrics
   const totalPrincipal = activeRecords.reduce((sum, r) => sum + r.amount, 0);
+  const userPrincipal = activeRecords
+    .filter((r) => r.ownerName === viewer.ownerKey)
+    .reduce((sum, r) => sum + r.amount, 0);
   const totalActiveInterest = activeRecords.reduce((sum, r) => sum + (r.interest || 0), 0);
   const totalHistoryInterest = historyRecords.reduce((sum, r) => sum + (r.interest || 0), 0);
 
@@ -457,7 +460,7 @@ export default function OverviewPage() {
         </div>
       </section>
 
-      <ProjectionPlanner liveBaseCapital={totalPrincipal} />
+      <ProjectionPlanner liveBaseCapital={userPrincipal} />
     </div>
   );
 }
