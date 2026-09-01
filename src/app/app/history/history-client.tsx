@@ -5,12 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { SortableTable } from "@/components/sortable-table";
 import { useDepositData } from "@/components/deposit-provider";
 import { useViewer } from "@/components/user-context";
-import { endedYear, formatAmount, formatDate, formatRate } from "@/lib/finance";
+import { useLocale } from "@/lib/i18n/locale-provider";
+import { endedYear } from "@/lib/finance";
 import { isAdmin } from "@/lib/users";
 
 export default function HistoryPage() {
   const params = useSearchParams();
   const viewer = useViewer();
+  const { t, formatAmount, formatDate, formatRate } = useLocale();
   const admin = isAdmin(viewer);
   const userFilter = admin ? params.get("user") || "All" : viewer.ownerKey;
   const bankFilter = params.get("bank") || "All";
@@ -43,7 +45,7 @@ export default function HistoryPage() {
       return true;
     })
     .reduce((sum, r) => sum + r.amount, 0);
-  const selectedUserLabel = userFilter === "All" ? "All members" : userFilter;
+  const selectedUserLabel = userFilter === "All" ? t("history.allMembers") : userFilter;
   const avgRate =
     filtered.length > 0
       ? filtered.reduce((sum, r) => sum + (r.rate || 0), 0) / filtered.length
@@ -69,21 +71,19 @@ export default function HistoryPage() {
   };
 
   if (!ready) {
-    return <div className="card p-6 text-sm text-slate-500">Loading…</div>;
+    return <div className="card p-6 text-sm text-slate-500">{t("common.loading")}</div>;
   }
 
   if (allRecords.length === 0) {
     return (
       <div className="card p-8 max-w-xl space-y-3">
-        <h1 className="text-2xl font-bold text-slate-900">No history loaded</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t("history.emptyTitle")}</h1>
         <p className="text-sm text-slate-600">
-          {admin
-            ? "Upload Excel to load matured interest records."
-            : "No matured interest records are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook."}
+          {admin ? t("history.emptyAdmin") : t("history.emptyMember")}
         </p>
         {admin && (
           <Link className="button inline-flex" href="/app/sync">
-            Upload Excel
+            {t("overview.uploadExcel")}
           </Link>
         )}
       </div>
@@ -94,17 +94,15 @@ export default function HistoryPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">Historical Returns</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">{t("history.eyebrow")}</span>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-            Interest History &amp; Matured Records
+            {t("history.title")}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Chronological audit of all past term deposits, bonds, and interest payouts.
-          </p>
+          <p className="mt-1 text-sm text-slate-500">{t("history.subtitle")}</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs font-medium text-slate-500">
-            Showing <strong className="text-slate-900">{filtered.length}</strong> historical records
+            {t("history.showing", { count: filtered.length })}
           </span>
         </div>
       </div>
@@ -114,7 +112,7 @@ export default function HistoryPage() {
         {/* Member filter (admin only) */}
         {admin && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-16">Member:</span>
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-16">{t("current.member")}:</span>
           <div className="flex flex-wrap gap-1.5">
             {users.map((u) => (
               <a
@@ -135,7 +133,7 @@ export default function HistoryPage() {
 
         {/* Bank filter */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-16">Bank:</span>
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-16">{t("current.bank")}:</span>
           <div className="flex flex-wrap gap-1.5">
             {banks.map((b) => (
               <a
@@ -155,7 +153,7 @@ export default function HistoryPage() {
 
         {/* Ended-year filter (toDate) */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-24">Ended year:</span>
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-24">{t("history.endedYear")}:</span>
           <div className="flex flex-wrap gap-1.5">
             {years.map((year) => (
               <a
@@ -177,19 +175,19 @@ export default function HistoryPage() {
       {/* Metrics Row */}
       <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         <div className="card p-4">
-          <span className="text-xs font-bold uppercase text-slate-500 truncate block">Selected User Total</span>
+          <span className="text-xs font-bold uppercase text-slate-500 truncate block">{t("history.selectedTotal")}</span>
           <p className="kpi-value mt-1 text-slate-900">{formatAmount(selectedUserTotal, "HKD")}</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">{selectedUserLabel} · current principal</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{selectedUserLabel} · {t("history.currentPrincipal")}</p>
         </div>
         <div className="card p-4 bg-emerald-50/40 border-emerald-100">
-          <span className="text-xs font-bold uppercase text-emerald-800 truncate block">Total Interest Earned</span>
+          <span className="text-xs font-bold uppercase text-emerald-800 truncate block">{t("history.totalInterest")}</span>
           <p className="kpi-value mt-1 text-emerald-700">+{formatAmount(totalInterestEarned, "HKD")}</p>
-          <p className="text-[11px] text-emerald-600 mt-0.5">Realized cash flow</p>
+          <p className="text-[11px] text-emerald-600 mt-0.5">{t("history.realizedCash")}</p>
         </div>
         <div className="card p-4">
-          <span className="text-xs font-bold uppercase text-slate-500 truncate block">Average Historical Rate</span>
+          <span className="text-xs font-bold uppercase text-slate-500 truncate block">{t("history.avgRate")}</span>
           <p className="kpi-value mt-1 text-teal-900">{formatRate(avgRate)}</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Simple average of coupons</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{t("history.avgRateNote")}</p>
         </div>
       </div>
 
@@ -200,16 +198,16 @@ export default function HistoryPage() {
             defaultSortKey="fromDate"
             defaultSortDir="asc"
             columns={[
-              { key: "seq", label: "Seq #", type: "number" },
-              { key: "ownerName", label: "Member" },
-              { key: "bank", label: "Bank" },
-              { key: "product", label: "Product / Instrument" },
-              { key: "amount", label: "Principal", className: "text-right", type: "number" },
-              { key: "rate", label: "Rate", className: "text-center", type: "number" },
-              { key: "fromDate", label: "Tenor & Dates", type: "date" },
-              { key: "interest", label: "Interest Earned", className: "text-right", type: "number" },
-              { key: "totalAmount", label: "Total Payout", className: "text-right", type: "number" },
-              { key: "action", label: "Action", className: "text-right", sortable: false },
+              { key: "seq", label: t("history.colSeq"), type: "number" },
+              { key: "ownerName", label: t("current.colMember") },
+              { key: "bank", label: t("current.colBank") },
+              { key: "product", label: t("current.colProduct") },
+              { key: "amount", label: t("current.colPrincipal"), className: "text-right", type: "number" },
+              { key: "rate", label: t("current.colRate"), className: "text-center", type: "number" },
+              { key: "fromDate", label: t("current.colTenor"), type: "date" },
+              { key: "interest", label: t("history.colInterest"), className: "text-right", type: "number" },
+              { key: "totalAmount", label: t("history.colPayout"), className: "text-right", type: "number" },
+              { key: "action", label: t("current.colAction"), className: "text-right", sortable: false },
             ]}
             rows={filtered.map((r, index) => {
               const isBond = r.product.includes("Bond") || r.product.includes("債券");
@@ -264,7 +262,7 @@ export default function HistoryPage() {
                       {formatDate(r.fromDate)} &rarr; {formatDate(r.toDate)}
                     </div>
                     <div className="text-[10px] text-slate-400">
-                      {r.months ? `${r.months} Months` : ""}
+                      {r.months ? `${r.months} ${t("common.months")}` : ""}
                     </div>
                   </td>,
                   <td key="interest" className="text-right font-mono text-xs font-bold text-emerald-700">
@@ -279,21 +277,21 @@ export default function HistoryPage() {
                       className="text-xs font-semibold text-rose-600 hover:text-rose-800 cursor-pointer"
                       onClick={() => deleteRecord(r.id)}
                     >
-                      Delete
+                      {t("common.delete")}
                     </button>
                   </td>,
                 ],
               };
             })}
-            emptyMessage="No historical records match these filters."
+            emptyMessage={t("history.emptyFilter")}
           />
         </div>
       </section>
 
       {/* Add Historical Record Form */}
       <section className="card p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900">Add Historical Record</h2>
-        <p className="text-xs text-slate-500 mb-4">Record a matured term deposit or past coupon payout</p>
+        <h2 className="text-lg font-bold text-slate-900">{t("history.addTitle")}</h2>
+        <p className="text-xs text-slate-500 mb-4">{t("history.addDesc")}</p>
 
         <form
           className="form-grid"
@@ -330,7 +328,7 @@ export default function HistoryPage() {
           }}
         >
           <label>
-            Member Name
+            {t("current.formMember")}
             <select name="ownerName" required defaultValue="Vin">
               <option value="Vin">Vin</option>
               <option value="MA">MA</option>
@@ -340,46 +338,46 @@ export default function HistoryPage() {
           </label>
 
           <label>
-            Bank
+            {t("current.formBank")}
             <input name="bank" required placeholder="e.g. SC, HS, HSBC, BOC, ICBC" />
           </label>
 
           <label>
-            Product Type / Name
+            {t("current.formProduct")}
             <input name="product" required placeholder="e.g. Time Deposit, 綠色債券, Bond" />
           </label>
 
           <label>
-            Principal Amount
+            {t("current.formAmount")}
             <input name="amount" type="number" step="0.01" required placeholder="100000" />
           </label>
 
           <label>
-            Annual Rate %
+            {t("current.formRate")}
             <input name="rate" type="number" step="0.001" placeholder="e.g. 3.5 or 0.035" />
           </label>
 
           <label>
-            From Date
+            {t("current.formFrom")}
             <input name="fromDate" type="date" />
           </label>
 
           <label>
-            To Date
+            {t("current.formTo")}
             <input name="toDate" type="date" />
           </label>
 
           <label>
-            Tenor (Months)
+            {t("current.formTenor")}
             <input name="months" type="number" step="0.1" placeholder="e.g. 3, 6, 12, 36" />
           </label>
 
           <label>
-            Interest Earned
+            {t("history.formInterest")}
             <input name="interest" type="number" step="0.01" placeholder="Actual interest earned" />
           </label>
 
-          <button className="button">Save History Record</button>
+          <button className="button">{t("history.save")}</button>
         </form>
       </section>
     </div>

@@ -1,13 +1,23 @@
+import type { Locale } from "@/lib/i18n/messages";
+
+function intlLocale(locale?: Locale) {
+  return locale === "zh" ? "zh-HK" : "en-US";
+}
+
+function dateLocale(locale?: Locale) {
+  return locale === "zh" ? "zh-HK" : "en-CA";
+}
+
 export function formatAmount(
   amount: number | null | undefined,
   currency = "HKD",
-  options?: { decimals?: number; compact?: boolean }
+  options?: { decimals?: number; compact?: boolean; locale?: Locale }
 ): string {
   if (amount === null || amount === undefined || isNaN(amount)) return "—";
 
-  const decimals = options?.decimals !== undefined ? options.decimals : 0; // Default to whole numbers for clean readability
+  const decimals = options?.decimals !== undefined ? options.decimals : 0;
 
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat(intlLocale(options?.locale), {
     style: "currency",
     currency: currency === "RMB" ? "CNY" : currency,
     minimumFractionDigits: decimals,
@@ -21,10 +31,13 @@ export function formatRate(rate: number | null | undefined): string {
   return (rate * 100).toFixed(2) + "%";
 }
 
-export function formatDate(date: Date | string | null | undefined): string {
+export function formatDate(
+  date: Date | string | null | undefined,
+  locale?: Locale,
+): string {
   if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
-  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-CA"); // YYYY-MM-DD
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString(dateLocale(locale));
 }
 
 /** Calendar year of a matured/ended date (`toDate`). */

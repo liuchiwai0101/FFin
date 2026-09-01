@@ -4,11 +4,13 @@ import Link from "next/link";
 import { SortableTable } from "@/components/sortable-table";
 import { useDepositData } from "@/components/deposit-provider";
 import { useIsAdmin, useViewer } from "@/components/user-context";
-import { formatAmount, formatRate } from "@/lib/finance";
+import { useLocale } from "@/lib/i18n/locale-provider";
+import { formatRate } from "@/lib/finance";
 
 export default function OverviewPage() {
   const admin = useIsAdmin();
   const viewer = useViewer();
+  const { t, formatAmount } = useLocale();
   const { ready, activeRecords: activeRaw, historyRecords: historyRaw, store } = useDepositData();
   const activeRecords = [...activeRaw].sort((a, b) => b.amount - a.amount);
   const historyRecords = [...historyRaw].sort(
@@ -16,25 +18,39 @@ export default function OverviewPage() {
   );
 
   if (!ready) {
-    return <div className="card p-6 text-sm text-slate-500">Loading dashboard…</div>;
+    return <div className="card p-6 text-sm text-slate-500">{t("common.loadingDashboard")}</div>;
   }
 
   if (!store.activeItems.length && !store.historyItems.length) {
     return (
       <div className="card p-8 max-w-xl space-y-3">
-        <h1 className="text-2xl font-bold text-slate-900">No Excel data loaded</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t("overview.emptyTitle")}</h1>
         <p className="text-sm text-slate-600">
-          {admin
-            ? "Upload your bank interest workbook to populate this overview."
-            : "No holdings are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook."}
+          {admin ? t("overview.emptyAdmin") : t("overview.emptyMember")}
         </p>
         {admin && (
           <Link className="button inline-flex" href="/app/sync">
-            Upload Excel
+            {t("overview.uploadExcel")}
           </Link>
         )}
       </div>
     );
+  }
+
+  function bankLabel(code: string) {
+    if (code === "SC") return t("overview.bankSC");
+    if (code === "HS") return t("overview.bankHS");
+    if (code === "HSBC") return t("overview.bankHSBC");
+    if (code === "ICBC") return t("overview.bankICBC");
+    return t("overview.bankBOC");
+  }
+
+  function productGroupLabel(product: string) {
+    if (product.includes("債券") || product.includes("Bond")) return t("overview.productBonds");
+    if (product.includes("RMB")) return t("overview.productRmb");
+    if (product.includes("Demand") || product.includes("Savings")) return t("overview.productDemand");
+    if (product.includes("馬拉松")) return t("overview.productMarathon");
+    return t("overview.productTimeDeposit");
   }
 
   // Total metrics
@@ -106,11 +122,7 @@ export default function OverviewPage() {
   // 3. Product Breakdown
   const productTotals: Record<string, { amount: number; count: number; interest: number }> = {};
   activeRecords.forEach((r) => {
-    let group = "Time Deposit (定期存款)";
-    if (r.product.includes("債券") || r.product.includes("Bond")) group = "Bonds (債券/零售債券)";
-    else if (r.product.includes("RMB")) group = "RMB Deposit (人民幣定存)";
-    else if (r.product.includes("Demand") || r.product.includes("Savings")) group = "Demand / Cash (活期儲蓄)";
-    else if (r.product.includes("馬拉松")) group = "Marathon Deposit (馬拉松定存)";
+    const group = productGroupLabel(r.product);
 
     if (!productTotals[group]) productTotals[group] = { amount: 0, count: 0, interest: 0 };
     productTotals[group].amount += r.amount;
@@ -121,12 +133,12 @@ export default function OverviewPage() {
   // 4. Multi-Year Compounding Projections (from Sheet Base: 7,215,525.50)
   const baseCapital = 7215525.50;
   const projections = [
-    { year: "Year 1 (第1年)", cRate: 0.0248, tRate: 0.07 },
-    { year: "Year 2 (第2年)", cRate: 0.0248, tRate: 0.07 },
-    { year: "Year 3 (第3年)", cRate: 0.0200, tRate: 0.07 },
-    { year: "Year 4 (第4年)", cRate: 0.0200, tRate: 0.07 },
-    { year: "Year 5 (第5年)", cRate: 0.0100, tRate: 0.07 },
-    { year: "Year 6 (第6年)", cRate: 0.0100, tRate: 0.07 },
+    { year: t("overview.year1"), cRate: 0.0248, tRate: 0.07 },
+    { year: t("overview.year2"), cRate: 0.0248, tRate: 0.07 },
+    { year: t("overview.year3"), cRate: 0.0200, tRate: 0.07 },
+    { year: t("overview.year4"), cRate: 0.0200, tRate: 0.07 },
+    { year: t("overview.year5"), cRate: 0.0100, tRate: 0.07 },
+    { year: t("overview.year6"), cRate: 0.0100, tRate: 0.07 },
   ];
 
   let currentCBase = baseCapital;
@@ -159,21 +171,19 @@ export default function OverviewPage() {
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">Portfolio Distribution &amp; Yield</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">{t("overview.eyebrow")}</span>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-            Asset Snapshot &amp; Bank Interest Summary
+            {t("overview.title")}
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500">
-            Real-time distribution across banks, users, active products, and historical interest returns.
-          </p>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">{t("overview.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2.5">
           <Link className="button-secondary text-xs" href="/app/current">
-            View Current Products &rarr;
+            {t("overview.viewCurrent")}
           </Link>
           {admin && (
             <Link className="button text-xs" href="/app/sync">
-              Upload / Sync Excel
+              {t("overview.uploadSync")}
             </Link>
           )}
         </div>
@@ -183,38 +193,38 @@ export default function OverviewPage() {
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
         {/* Card 1: Total Principal */}
         <div className="card bg-gradient-to-br from-white to-teal-50/40 border-teal-100/80 p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Active Principal</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiTotalPrincipal")}</p>
           <p className="kpi-value mt-1.5 text-teal-950 font-mono">
             {formatAmount(totalPrincipal, "HKD")}
           </p>
-          <p className="mt-1 text-[11px] text-teal-700 font-semibold">{activeRecords.length} active holdings</p>
+          <p className="mt-1 text-[11px] text-teal-700 font-semibold">{t("overview.activeHoldings", { count: activeRecords.length })}</p>
         </div>
 
         {/* Card 2: Expected Active Interest */}
         <div className="card bg-gradient-to-br from-white to-emerald-50/40 border-emerald-100/80 p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Expected Active Interest</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiActiveInterest")}</p>
           <p className="kpi-value mt-1.5 text-emerald-700 font-mono">
             +{formatAmount(totalActiveInterest, "HKD")}
           </p>
-          <p className="mt-1 text-[11px] text-slate-500">From current term deposits &amp; bonds</p>
+          <p className="mt-1 text-[11px] text-slate-500">{t("overview.kpiActiveInterestNote")}</p>
         </div>
 
         {/* Card 3: Weighted Avg Yield */}
         <div className="card p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Weighted Average Yield</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiWeightedYield")}</p>
           <p className="kpi-value mt-1.5 text-slate-900 font-mono">
             {formatRate(weightedAvgRate)}
           </p>
-          <p className="mt-1 text-[11px] text-slate-500">Annualized across active assets</p>
+          <p className="mt-1 text-[11px] text-slate-500">{t("overview.kpiWeightedYieldNote")}</p>
         </div>
 
         {/* Card 4: Historical Interest */}
         <div className="card bg-gradient-to-br from-white to-blue-50/40 border-blue-100/80 p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Cumulative Historical Interest</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiHistoryInterest")}</p>
           <p className="kpi-value mt-1.5 text-blue-900 font-mono">
             +{formatAmount(totalHistoryInterest, "HKD")}
           </p>
-          <p className="mt-1 text-[11px] text-blue-700 font-semibold">{historyRecords.length} matured historical terms</p>
+          <p className="mt-1 text-[11px] text-blue-700 font-semibold">{t("overview.maturedTerms", { count: historyRecords.length })}</p>
         </div>
       </section>
 
@@ -222,10 +232,10 @@ export default function OverviewPage() {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            User Asset Breakdown
+            {t("overview.userBreakdown")}
           </h2>
           <span className="text-xs text-slate-500 font-medium font-mono">
-            Total: {formatAmount(totalPrincipal, "HKD")}
+            {t("overview.total")}: {formatAmount(totalPrincipal, "HKD")}
           </span>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
@@ -243,7 +253,7 @@ export default function OverviewPage() {
                     <span className="h-6 w-6 rounded-full bg-teal-100 text-teal-800 font-black text-xs flex items-center justify-center">
                       {u.slice(0, 2)}
                     </span>
-                    <span className="badge text-[10px] font-bold">{pct.toFixed(1)}% share</span>
+                    <span className="badge text-[10px] font-bold">{t("overview.share", { pct: pct.toFixed(1) })}</span>
                   </div>
                   <h3 className="mt-2 text-sm font-black text-slate-900">{u}</h3>
                   <p className="user-stat-value mt-1 text-slate-950 font-mono">
@@ -251,7 +261,7 @@ export default function OverviewPage() {
                   </p>
                 </div>
                 <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 text-[11px]">Interest:</span>
+                  <span className="text-slate-500 text-[11px]">{t("overview.interest")}:</span>
                   <span className="font-bold text-emerald-700 font-mono text-[11px]">
                     +{formatAmount(userInterest, "HKD")}
                   </span>
@@ -266,11 +276,11 @@ export default function OverviewPage() {
       <section className="card shadow-sm overflow-hidden">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">Bank Distribution Matrix (銀行資產分佈表)</h2>
-            <p className="text-xs text-slate-500">Snapshot of active deposit and bond principal across all financial institutions</p>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">{t("overview.bankMatrixTitle")}</h2>
+            <p className="text-xs text-slate-500">{t("overview.bankMatrixDesc")}</p>
           </div>
           <Link className="text-xs font-semibold text-teal-700 hover:underline" href="/app/current">
-            View details &rarr;
+            {t("overview.viewDetails")}
           </Link>
         </div>
 
@@ -279,20 +289,20 @@ export default function OverviewPage() {
             defaultSortKey="total"
             defaultSortDir="desc"
             columns={[
-              { key: "bank", label: "Bank", className: "w-36" },
+              { key: "bank", label: t("overview.bank"), className: "w-36" },
               { key: "MA", label: "MA", className: "text-right", type: "number" },
               { key: "Vin", label: "Vin", className: "text-right", type: "number" },
               { key: "Miki", label: "Miki", className: "text-right", type: "number" },
               { key: "BABA", label: "BABA", className: "text-right", type: "number" },
               {
                 key: "total",
-                label: "Total Principal",
+                label: t("overview.totalPrincipal"),
                 className: "text-right font-bold text-slate-900 bg-slate-100/70",
                 type: "number",
               },
               {
                 key: "pct",
-                label: "% Share",
+                label: t("overview.pctShare"),
                 className: "text-right w-20 font-bold text-slate-900",
                 type: "number",
               },
@@ -317,15 +327,7 @@ export default function OverviewPage() {
                       {b}
                     </span>
                     <span className="text-xs text-slate-700">
-                      {b === "SC"
-                        ? "Standard Chartered"
-                        : b === "HS"
-                          ? "Hang Seng"
-                          : b === "HSBC"
-                            ? "HSBC / MA HSBC"
-                            : b === "ICBC"
-                              ? "ICBC Asia"
-                              : "Bank of China"}
+                      {bankLabel(b)}
                     </span>
                   </td>,
                   <td key="MA" className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
@@ -353,7 +355,7 @@ export default function OverviewPage() {
             })}
             footer={
               <tr className="bg-slate-100 font-black text-slate-950 border-t-2 border-slate-300">
-                <td>Grand Total</td>
+                <td>{t("overview.grandTotal")}</td>
                 <td className="text-right font-mono text-xs whitespace-nowrap">{formatAmount(userTotals.MA, "HKD")}</td>
                 <td className="text-right font-mono text-xs whitespace-nowrap">{formatAmount(userTotals.Vin, "HKD")}</td>
                 <td className="text-right font-mono text-xs whitespace-nowrap">{formatAmount(userTotals.Miki, "HKD")}</td>
@@ -372,11 +374,11 @@ export default function OverviewPage() {
       <section className="card shadow-sm overflow-hidden">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">Total Interest by User &amp; Bank (利息收益分佈表)</h2>
-            <p className="text-xs text-slate-500">Cumulative interest earnings breakdown by member and banking institution</p>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">{t("overview.interestMatrixTitle")}</h2>
+            <p className="text-xs text-slate-500">{t("overview.interestMatrixDesc")}</p>
           </div>
           <Link className="text-xs font-semibold text-teal-700 hover:underline" href="/app/history">
-            View interest history &rarr;
+            {t("overview.viewHistory")}
           </Link>
         </div>
 
@@ -385,7 +387,7 @@ export default function OverviewPage() {
             defaultSortKey="total"
             defaultSortDir="desc"
             columns={[
-              { key: "member", label: "Member", className: "w-28" },
+              { key: "member", label: t("overview.member"), className: "w-28" },
               { key: "BOC", label: "BOC (中銀)", className: "text-right", type: "number" },
               { key: "HS", label: "HS (恒生)", className: "text-right", type: "number" },
               { key: "SC", label: "SC (渣打)", className: "text-right", type: "number" },
@@ -393,7 +395,7 @@ export default function OverviewPage() {
               { key: "ICBC", label: "ICBC (工銀)", className: "text-right", type: "number" },
               {
                 key: "total",
-                label: "Total Interest",
+                label: t("overview.totalInterest"),
                 className: "text-right font-bold text-slate-900 bg-emerald-50/50",
                 type: "number",
               },
@@ -443,7 +445,7 @@ export default function OverviewPage() {
             })}
             footer={
               <tr className="bg-slate-100 font-black text-slate-950 border-t-2 border-slate-300">
-                <td>Grand Total</td>
+                <td>{t("overview.grandTotal")}</td>
                 <td className="text-right font-mono text-xs whitespace-nowrap">+{formatAmount(bankInterestTotals.BOC, "HKD")}</td>
                 <td className="text-right font-mono text-xs whitespace-nowrap">+{formatAmount(bankInterestTotals.HS, "HKD")}</td>
                 <td className="text-right font-mono text-xs whitespace-nowrap">+{formatAmount(bankInterestTotals.SC, "HKD")}</td>
@@ -461,8 +463,8 @@ export default function OverviewPage() {
       {/* Product Type Breakdown */}
       <section className="card shadow-sm">
         <div className="mb-4">
-          <h2 className="text-base sm:text-lg font-bold text-slate-900">Current Product Types (投資產品分佈)</h2>
-          <p className="text-xs text-slate-500">Allocation across fixed deposits, bonds, and demand accounts</p>
+          <h2 className="text-base sm:text-lg font-bold text-slate-900">{t("overview.productTypesTitle")}</h2>
+          <p className="text-xs text-slate-500">{t("overview.productTypesDesc")}</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {Object.entries(productTotals).map(([name, data]) => {
@@ -479,7 +481,7 @@ export default function OverviewPage() {
                   </p>
                 </div>
                 <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
-                  <span>{data.count} items</span>
+                  <span>{t("overview.items", { count: data.count })}</span>
                   <span className="text-emerald-700 font-semibold font-mono">
                     +{formatAmount(data.interest, "HKD")}
                   </span>
@@ -499,20 +501,20 @@ export default function OverviewPage() {
                 6Y
               </span>
               <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                Compound Growth Projections (複利增長推演)
+                {t("overview.projectionsTitle")}
               </h2>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              6-Year multi-horizon simulation starting from Base Capital of <strong className="text-slate-800 font-mono">{formatAmount(baseCapital, "HKD")}</strong>
+              {t("overview.projectionsDesc")} <strong className="text-slate-800 font-mono">{formatAmount(baseCapital, "HKD")}</strong>
             </p>
           </div>
 
           <div className="flex items-center gap-3 text-xs">
             <span className="inline-flex items-center gap-1.5 text-slate-600">
-              <span className="h-2.5 w-2.5 rounded-full bg-teal-600" /> Conservative Yield
+              <span className="h-2.5 w-2.5 rounded-full bg-teal-600" /> {t("overview.conservativeYield")}
             </span>
             <span className="inline-flex items-center gap-1.5 text-emerald-800 font-bold">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> 7.0% Target Yield
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> {t("overview.targetYield")}
             </span>
           </div>
         </div>
@@ -523,19 +525,19 @@ export default function OverviewPage() {
           <div className="rounded-xl border border-teal-100 bg-gradient-to-br from-teal-50/40 to-slate-50 p-4.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-teal-800">
-                Strategy A &middot; Conservative Deposit (1.0% &ndash; 2.5%)
+                {t("overview.strategyA")}
               </span>
-              <span className="badge text-[10px]">Low Risk</span>
+              <span className="badge text-[10px]">{t("overview.lowRisk")}</span>
             </div>
             <div className="mt-3 flex items-baseline justify-between">
               <div>
-                <span className="text-[11px] text-slate-400">Year 6 Total Capital</span>
+                <span className="text-[11px] text-slate-400">{t("overview.year6Capital")}</span>
                 <p className="text-xl font-black text-slate-900 font-mono">
                   {formatAmount(currentCBase, "HKD")}
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-[11px] text-slate-400">6Y Total Interest</span>
+                <span className="text-[11px] text-slate-400">{t("overview.year6Interest")}</span>
                 <p className="text-base font-black text-teal-700 font-mono">
                   +{formatAmount(totalConservativeProfit, "HKD")}
                 </p>
@@ -547,19 +549,19 @@ export default function OverviewPage() {
           <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/30 p-4.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-900">
-                Strategy B &middot; Target Portfolio (7.0% Fixed Yield)
+                {t("overview.strategyB")}
               </span>
-              <span className="badge bg-emerald-200 text-emerald-900 text-[10px]">Optimized</span>
+              <span className="badge bg-emerald-200 text-emerald-900 text-[10px]">{t("overview.optimized")}</span>
             </div>
             <div className="mt-3 flex items-baseline justify-between">
               <div>
-                <span className="text-[11px] text-slate-400">Year 6 Total Capital</span>
+                <span className="text-[11px] text-slate-400">{t("overview.year6Capital")}</span>
                 <p className="text-xl font-black text-emerald-950 font-mono">
                   {formatAmount(currentTBase, "HKD")}
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-[11px] text-slate-400">6Y Total Interest</span>
+                <span className="text-[11px] text-slate-400">{t("overview.year6Interest")}</span>
                 <p className="text-base font-black text-emerald-700 font-mono">
                   +{formatAmount(totalTargetProfit, "HKD")}
                 </p>
@@ -579,13 +581,13 @@ export default function OverviewPage() {
                 <span className="font-extrabold text-xs text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
                   {p.year}
                 </span>
-                <span className="text-[11px] text-slate-400">Stage {idx + 1}/6</span>
+                <span className="text-[11px] text-slate-400">{t("overview.stage", { n: idx + 1 })}</span>
               </div>
 
               {/* Conservative Row */}
               <div className="flex items-center justify-between text-xs">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Conservative ({formatRate(p.cRate)})</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">{t("overview.conservative")} ({formatRate(p.cRate)})</span>
                   <span className="font-mono font-bold text-slate-900 text-xs">
                     {formatAmount(p.cBase, "HKD")}
                   </span>
@@ -598,7 +600,7 @@ export default function OverviewPage() {
               {/* Target 7% Row */}
               <div className="flex items-center justify-between text-xs bg-emerald-50/50 p-1.5 rounded border border-emerald-100/60">
                 <div>
-                  <span className="text-[10px] font-bold text-emerald-900 uppercase block">Target (7.00%)</span>
+                  <span className="text-[10px] font-bold text-emerald-900 uppercase block">{t("overview.target")}</span>
                   <span className="font-mono font-black text-slate-950 text-xs">
                     {formatAmount(p.tBase, "HKD")}
                   </span>

@@ -3,36 +3,42 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { LangToggle } from "@/components/lang-toggle";
+import { useT } from "@/lib/i18n/locale-provider";
 
 function LoginForm() {
   const params = useSearchParams();
+  const t = useT();
   const error = params.get("error");
   const next = params.get("next") || "/app";
 
   return (
     <main className="auth-page">
+      <div className="absolute top-4 right-4">
+        <LangToggle />
+      </div>
       <form action="/api/login" method="post" className="auth-card">
-        <p className="eyebrow">Family finance</p>
-        <h1>Welcome back</h1>
-        <p className="subtitle">Sign in with your family account.</p>
+        <p className="eyebrow">{t("login.eyebrow")}</p>
+        <h1>{t("login.title")}</h1>
+        <p className="subtitle">{t("login.subtitle")}</p>
         {error && (
           <p className="error" role="alert">
-            That account or password was not recognized.
+            {t("login.error")}
           </p>
         )}
         <input type="hidden" name="next" value={next} />
         <label>
-          Username
+          {t("login.username")}
           <input
             required
             name="email"
             type="text"
             autoComplete="username"
-            placeholder="Vin, MA, Miki, or BABA"
+            placeholder={t("login.usernamePlaceholder")}
           />
         </label>
         <label>
-          Password
+          {t("login.password")}
           <input
             required
             name="password"
@@ -40,9 +46,9 @@ function LoginForm() {
             autoComplete="current-password"
           />
         </label>
-        <button className="button w-full">Sign in</button>
+        <button className="button w-full">{t("login.submit")}</button>
         <p className="form-note">
-          <Link href="/">Back to home</Link>
+          <Link href="/">{t("common.backHome")}</Link>
         </p>
       </form>
     </main>
