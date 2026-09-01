@@ -83,6 +83,8 @@ export default function OverviewPage() {
   // 1. Bank Distribution Matrix: Bank x User -> Amount
   const bankUserMatrix: Record<string, Record<string, number>> = {};
   const userTotals: Record<string, number> = { MA: 0, Vin: 0, Miki: 0, BABA: 0 };
+  const userCurrentInterest: Record<string, number> = { MA: 0, Vin: 0, Miki: 0, BABA: 0 };
+  const userHistoryInterest: Record<string, number> = { MA: 0, Vin: 0, Miki: 0, BABA: 0 };
 
   banks.forEach((b) => {
     bankUserMatrix[b] = { MA: 0, Vin: 0, Miki: 0, BABA: 0, total: 0 };
@@ -97,6 +99,16 @@ export default function OverviewPage() {
     }
     if (userTotals[u] !== undefined) {
       userTotals[u] += r.amount;
+    }
+    if (userCurrentInterest[u] !== undefined) {
+      userCurrentInterest[u] += r.interest || 0;
+    }
+  });
+
+  historyRecords.forEach((r) => {
+    const u = r.ownerName;
+    if (userHistoryInterest[u] !== undefined) {
+      userHistoryInterest[u] += r.interest || 0;
     }
   });
 
@@ -210,7 +222,8 @@ export default function OverviewPage() {
           {users.map((u) => {
             const userAmount = userTotals[u] || 0;
             const pct = totalPrincipal > 0 ? (userAmount / totalPrincipal) * 100 : 0;
-            const userInterest = userInterestMatrix[u]?.total || 0;
+            const currentInterest = userCurrentInterest[u] || 0;
+            const historyInterest = userHistoryInterest[u] || 0;
             return (
               <div
                 key={u}
@@ -228,11 +241,19 @@ export default function OverviewPage() {
                     {formatAmount(userAmount, "HKD")}
                   </p>
                 </div>
-                <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500 text-[11px]">{t("overview.interest")}:</span>
-                  <span className="font-bold text-emerald-700 font-mono text-[11px]">
-                    +{formatAmount(userInterest, "HKD")}
-                  </span>
+                <div className="mt-3 pt-2 border-t border-slate-100 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 text-[11px]">{t("overview.interestCurrent")}:</span>
+                    <span className="font-bold text-emerald-700 font-mono text-[11px]">
+                      +{formatAmount(currentInterest, "HKD")}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 text-[11px]">{t("overview.interestHistory")}:</span>
+                    <span className="font-bold text-blue-700 font-mono text-[11px]">
+                      +{formatAmount(historyInterest, "HKD")}
+                    </span>
+                  </div>
                 </div>
               </div>
             );
