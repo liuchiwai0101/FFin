@@ -52,8 +52,11 @@ const en = {
   },
   overview: {
     emptyTitle: "No Excel data loaded",
-    emptyAdmin: "Upload your bank interest workbook to populate this overview.",
-    emptyMember: "No holdings are visible for your account yet. Ask an admin to upload the family Excel workbook.",
+    emptyAdmin:
+      "Data is stored in this browser only — phone and computer do not share it. Upload Summary.xlsx here, or import a backup exported from another device.",
+    emptyMember:
+      "Data is stored in this browser only. Ask an admin to upload Summary.xlsx or import a backup on this phone before you can see holdings.",
+    emptyDeviceNote: "Each device keeps its own copy until an admin loads data on that device.",
     uploadExcel: "Upload Excel",
     eyebrow: "Portfolio Distribution & Yield",
     title: "Asset Snapshot & Bank Interest Summary",
@@ -209,7 +212,9 @@ const en = {
   sync: {
     eyebrow: "Data Management",
     title: "Upload & Sync Excel Sheet",
-    desc: "Upload Summary.xlsx to populate the dashboard for all family members. Data stays in this browser until you clear it.",
+    desc: "Upload Summary.xlsx to populate the dashboard for all family members on this device. Export a backup on desktop and import it here to sync your phone.",
+    deviceNote:
+      "Phone and computer use separate browser storage. After loading data on one device, export a backup and import it on the other.",
     lastLoaded: "Last loaded: {date}",
     clearAt: "Auto-clears: {date}",
     activeRecords: "Active Portfolio Records",
@@ -227,6 +232,15 @@ const en = {
     openOverview: "Open Overview",
     backOverview: "Back to Overview",
     uploadFailed: "Upload failed.",
+    exportBackupTitle: "Export backup",
+    exportBackupDesc: "Download a JSON backup from this browser to move data to another device.",
+    exportBackupBtn: "Download backup",
+    importBackupTitle: "Import backup",
+    importBackupDesc: "Load a backup file exported from another device. This replaces data in this browser.",
+    importBackupBtn: "Import backup",
+    importing: "Importing…",
+    importFailed: "Import failed. Choose a valid FFin backup file.",
+    imported: "Imported {active} active and {history} history rows.",
   },
 } as const;
 
@@ -280,8 +294,11 @@ const zh = {
   },
   overview: {
     emptyTitle: "尚未載入 Excel 數據",
-    emptyAdmin: "上傳銀行利息工作簿以填充此總覽。",
-    emptyMember: "您的帳戶尚無可見持倉。請聯絡管理員上傳家庭 Excel 工作簿。",
+    emptyAdmin:
+      "數據只儲存在此瀏覽器，手機與電腦不會自動同步。請在此上傳 Summary.xlsx，或從其他裝置匯入備份檔。",
+    emptyMember:
+      "數據只儲存在此瀏覽器。請聯絡管理員在此手機上傳 Summary.xlsx 或匯入備份後，您才能看到持倉。",
+    emptyDeviceNote: "每台裝置需各自載入數據，管理員上傳或匯入後全家成員才可查看。",
     uploadExcel: "上傳 Excel",
     eyebrow: "投資組合分佈與收益",
     title: "資產快照與銀行利息摘要",
@@ -437,7 +454,8 @@ const zh = {
   sync: {
     eyebrow: "數據管理",
     title: "上傳及同步 Excel 表",
-    desc: "上傳 Summary.xlsx 以填充所有家庭成員的儀表板。數據保留在此瀏覽器，直至您清除。",
+    desc: "上傳 Summary.xlsx 以在此裝置填充全家成員的儀表板。可在電腦匯出備份，再於手機匯入同步。",
+    deviceNote: "手機與電腦的瀏覽器儲存空間分開。在一台裝置載入後，請匯出備份並在另一台匯入。",
     lastLoaded: "上次載入：{date}",
     clearAt: "自動清除：{date}",
     activeRecords: "現有投資組合紀錄",
@@ -455,6 +473,15 @@ const zh = {
     openOverview: "開啟總覽",
     backOverview: "返回總覽",
     uploadFailed: "上傳失敗。",
+    exportBackupTitle: "匯出備份",
+    exportBackupDesc: "下載此瀏覽器的 JSON 備份，以便轉移到其他裝置。",
+    exportBackupBtn: "下載備份",
+    importBackupTitle: "匯入備份",
+    importBackupDesc: "載入從其他裝置匯出的備份檔，將取代此瀏覽器中的現有數據。",
+    importBackupBtn: "匯入備份",
+    importing: "匯入中…",
+    importFailed: "匯入失敗，請選擇有效的 FFin 備份檔。",
+    imported: "已匯入 {active} 項現有及 {history} 項歷史紀錄。",
   },
 };
 

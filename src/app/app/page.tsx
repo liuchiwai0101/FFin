@@ -29,6 +29,9 @@ export default function OverviewPage() {
         <p className="text-sm text-slate-600">
           {admin ? t("overview.emptyAdmin") : t("overview.emptyMember")}
         </p>
+        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          {t("overview.emptyDeviceNote")}
+        </p>
         {admin && (
           <Link className="button inline-flex" href="/app/sync">
             {t("overview.uploadExcel")}
