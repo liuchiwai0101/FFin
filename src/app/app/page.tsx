@@ -152,6 +152,13 @@ export default function OverviewPage() {
 
   const memberCols = users.filter((u) => users.length === 1 || (userTotals[u] || 0) > 0);
   const showMemberColumns = memberCols.length > 1;
+  const visibleUserCards = users.filter(
+    (u) =>
+      users.length === 1 ||
+      (userTotals[u] || 0) > 0 ||
+      (userCurrentInterest[u] || 0) > 0 ||
+      (userHistoryInterest[u] || 0) > 0,
+  );
   const interestBanks = (["BOC", "HS", "SC", "HSBC", "ICBC"] as const).filter(
     (b) => (bankInterestTotals[b] || 0) > 0,
   );
@@ -237,13 +244,13 @@ export default function OverviewPage() {
             {t("overview.total")}: {formatAmount(totalPrincipal, "HKD")}
           </span>
         </div>
-        <div className={users.length === 1 ? "" : "fit-card-grid"}>
-          {users.map((u) => {
+        <div className={visibleUserCards.length === 1 ? "" : "fit-card-grid"}>
+          {visibleUserCards.map((u) => {
             const userAmount = userTotals[u] || 0;
             const pct = totalPrincipal > 0 ? (userAmount / totalPrincipal) * 100 : 0;
             const currentInterest = userCurrentInterest[u] || 0;
             const historyInterest = userHistoryInterest[u] || 0;
-            if (users.length === 1) {
+            if (visibleUserCards.length === 1) {
               return (
                 <div key={u} className="card user-summary-card border-slate-200 shadow-sm">
                   <div className="user-summary-identity">
@@ -434,7 +441,7 @@ export default function OverviewPage() {
                 type: "number",
               },
             ]}
-            rows={users.map((u) => {
+            rows={visibleUserCards.map((u) => {
               const row = userInterestMatrix[u];
               return {
                 id: u,
