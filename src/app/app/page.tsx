@@ -178,20 +178,20 @@ export default function OverviewPage() {
   return (
     <div className="space-y-5 sm:space-y-6">
       {/* Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">{t("overview.eyebrow")}</span>
-          <h1 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+      <div className="page-header border-b border-slate-200/80 pb-3 sm:pb-4">
+        <div className="min-w-0 flex-1">
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-teal-700">{t("overview.eyebrow")}</span>
+          <h1 className="text-lg font-black tracking-tight text-slate-900 sm:text-2xl leading-tight">
             {t("overview.title")}
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500">{t("overview.subtitle")}</p>
+          <p className="mt-0.5 sm:mt-1 text-[11px] sm:text-sm text-slate-500 leading-snug">{t("overview.subtitle")}</p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <Link className="button-secondary text-xs" href="/app/current">
+        <div className="page-header-actions">
+          <Link className="button-secondary text-[11px] sm:text-xs flex-1 sm:flex-none justify-center" href="/app/current">
             {t("overview.viewCurrent")}
           </Link>
           {admin && (
-            <Link className="button text-xs" href="/app/sync">
+            <Link className="button text-[11px] sm:text-xs flex-1 sm:flex-none justify-center" href="/app/sync">
               {t("overview.uploadSync")}
             </Link>
           )}
@@ -201,8 +201,8 @@ export default function OverviewPage() {
       {/* Top Level KPI Cards */}
       <section className="kpi-grid">
         {/* Card 1: Total Principal */}
-        <div className="card bg-gradient-to-br from-white to-teal-50/40 border-teal-100/80 p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiTotalPrincipal")}</p>
+        <div className="card bg-gradient-to-br from-white to-teal-50/40 border-teal-100/80 shadow-sm">
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">{t("overview.kpiTotalPrincipal")}</p>
           <p className="kpi-value mt-1.5 text-teal-950 font-mono">
             {formatAmount(totalPrincipal, "HKD")}
           </p>
@@ -210,8 +210,8 @@ export default function OverviewPage() {
         </div>
 
         {/* Card 2: Expected Active Interest */}
-        <div className="card bg-gradient-to-br from-white to-emerald-50/40 border-emerald-100/80 p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiActiveInterest")}</p>
+        <div className="card bg-gradient-to-br from-white to-emerald-50/40 border-emerald-100/80 shadow-sm">
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">{t("overview.kpiActiveInterest")}</p>
           <p className="kpi-value mt-1.5 text-emerald-700 font-mono">
             +{formatAmount(totalActiveInterest, "HKD")}
           </p>
@@ -219,8 +219,8 @@ export default function OverviewPage() {
         </div>
 
         {/* Card 3: Weighted Avg Yield */}
-        <div className="card p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiWeightedYield")}</p>
+        <div className="card shadow-sm">
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">{t("overview.kpiWeightedYield")}</p>
           <p className="kpi-value mt-1.5 text-slate-900 font-mono">
             {formatRate(weightedAvgRate)}
           </p>
@@ -228,8 +228,8 @@ export default function OverviewPage() {
         </div>
 
         {/* Card 4: Historical Interest */}
-        <div className="card bg-gradient-to-br from-white to-blue-50/40 border-blue-100/80 p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiHistoryInterest")}</p>
+        <div className="card bg-gradient-to-br from-white to-blue-50/40 border-blue-100/80 shadow-sm">
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">{t("overview.kpiHistoryInterest")}</p>
           <p className="kpi-value mt-1.5 text-blue-900 font-mono">
             +{formatAmount(totalHistoryInterest, "HKD")}
           </p>

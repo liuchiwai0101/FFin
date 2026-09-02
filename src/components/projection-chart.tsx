@@ -77,7 +77,7 @@ export function ProjectionChart({
 
       <svg
         viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-        className="block h-[148px] w-full"
+        className="projection-chart block w-full"
         preserveAspectRatio="xMidYMid meet"
         textRendering="optimizeLegibility"
         role="img"
