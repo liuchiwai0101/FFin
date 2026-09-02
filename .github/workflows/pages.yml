@@ -3,11 +3,6 @@ name: Deploy static site to GitHub Pages
 on:
   push:
     branches: [main]
-    paths:
-      - "docs/**"
-      - "index.html"
-      - ".nojekyll"
-      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -18,48 +13,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Same model as News (branch Pages): publish the latest docs/ to gh-pages.
   # Settings → Pages → Deploy from a branch → gh-pages / (root)
-  # Repo must be public (or GitHub Pro) for https://liuchiwai0101.github.io/FFin/
+  # Live URL: https://liuchiwai0101.github.io/FFin/
   publish-gh-pages:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Publish docs/ onto gh-pages
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build Next.js static export for /FFin
+        run: npm run build
         env:
-          FFIN_PASSWORDS: ${{ secrets.FFIN_PASSWORDS }}
+          NEXT_PUBLIC_BASE_PATH: /FFin
+      - name: Publish out/ onto gh-pages
         run: |
           set -euo pipefail
           mkdir -p /tmp/ffin-pages
-          cp -a docs/. /tmp/ffin-pages/
+          cp -a out/. /tmp/ffin-pages/
           touch /tmp/ffin-pages/.nojekyll
-          node <<'NODE'
-          const { createHash } = require("crypto");
-          const fs = require("fs");
-          let hashes = {};
-          try {
-            const parsed = JSON.parse(process.env.FFIN_PASSWORDS || "{}");
-            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-              for (const [user, password] of Object.entries(parsed)) {
-                if (typeof password === "string" && password.length > 0) {
-                  hashes[user] = createHash("sha256").update(password, "utf8").digest("hex");
-                }
-              }
-            }
-          } catch (err) {
-            console.warn("FFIN_PASSWORDS is missing or invalid.");
-          }
-          fs.mkdirSync("/tmp/ffin-pages/assets", { recursive: true });
-          fs.writeFileSync(
-            "/tmp/ffin-pages/assets/auth-config.js",
-            "window.FFIN_PASSWORD_HASHES = " + JSON.stringify(hashes) + ";\n",
-          );
-          NODE
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan pages-publish
           find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
           cp -a /tmp/ffin-pages/. .
           git add -A
-          git commit -m "Publish latest static site to GitHub Pages"
+          git commit -m "Publish Next.js static export to GitHub Pages"
           git push -f origin pages-publish:gh-pages

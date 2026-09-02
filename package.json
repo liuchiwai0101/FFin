@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:pages": "NEXT_PUBLIC_BASE_PATH=/FFin next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

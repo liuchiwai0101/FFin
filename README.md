@@ -1,6 +1,6 @@
 # Family Finance (FFin)
 
-Next.js app with Excel upload (no database required).
+Next.js app with Excel upload (no database required). GitHub Pages serves the **same Next.js UI** as [ffin-silk.vercel.app](https://ffin-silk.vercel.app/).
 
 > **Mainland China:** `*.vercel.app` is blocked, and Zeabur is paid. The **free** production site is GitHub Pages (same as [News](https://liuchiwai0101.github.io/News/)).
 
@@ -14,27 +14,20 @@ Open **this exact address** (the `/FFin/` path is required):
 
 ## If you see “There isn't a GitHub Pages site here”
 
-The `gh-pages` files are already in the repo. GitHub still returns 404 until **both** of these are true (News already has them):
-
-1. **Make the repo public** (free github.io does not work on a private repo)
-   - GitHub → **FFin** → **Settings** → scroll to **Danger zone**
-   - **Change visibility** → **Public**
-2. **Turn on Pages**
-   - **Settings → Pages → Build and deployment**
-   - Source: **Deploy from a branch**
-   - Branch: **`gh-pages`** / **`/(root)`** → **Save**
+1. **Repo must be public** (free github.io does not work on a private repo)
+2. **Turn on Pages:** **Settings → Pages → Build and deployment** → Source: **Deploy from a branch** → Branch: **`gh-pages`** / **`/(root)`** → **Save**
 3. Wait about a minute, then open https://liuchiwai0101.github.io/FFin/
 
 **About → Website** should be `https://liuchiwai0101.github.io/FFin/` (not Vercel).
 
-This repo is currently **private**, which is why github.io 404s. News works because it is **public**.
+Pushes to `main` rebuild the Next.js app and publish `out/` to `gh-pages`.
 
 ## Gitee Pages (free, often faster in China)
 
 If github.io is slow after it is live:
 
 1. Import this GitHub repo on [gitee.com](https://gitee.com)
-2. **服务 → Gitee Pages** from `docs/` or `gh-pages`
+2. **服务 → Gitee Pages** from the `gh-pages` branch
 
 ## Portable single HTML (offline)
 
@@ -43,22 +36,23 @@ Download **[docs/Family-Finance-Portable.html](docs/Family-Finance-Portable.html
 ## Local Next.js
 
 ```bash
-cp .env.example .env
 npm install
 npm run dev
 ```
 
 Open http://localhost:3000 → Sign in → Sync Excel → upload `Summary.xlsx`.
 
-Local preview of the GitHub Pages app:
+Local preview of the GitHub Pages export (`/FFin` base path):
 
 ```bash
-npx --yes serve docs -p 4173
+NEXT_PUBLIC_BASE_PATH=/FFin npm run build
+npx --yes serve out -p 4173
 ```
 
-## Optional: Next.js on a VPS
+Then open http://localhost:4173/FFin/
+
+## Optional: static site on a VPS
 
 ```bash
-cp .env.example .env
 docker compose up -d --build
 ```

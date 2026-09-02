@@ -1,27 +1,14 @@
 import type { NextConfig } from "next";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const nextConfig: NextConfig = {
-  // Minimal Node server for Docker / Zeabur / Sealos / any VPS (not Vercel).
-  output: "standalone",
-  experimental: {
-    proxyClientMaxBodySize: "10mb",
-    serverActions: {
-      bodySizeLimit: "10mb",
-    },
-  },
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-        ],
-      },
-    ];
-  },
+  output: "export",
+  trailingSlash: true,
+  images: { unoptimized: true },
+  ...(basePath
+    ? { basePath, assetPrefix: basePath }
+    : {}),
 };
 
 export default nextConfig;

@@ -1,17 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
 import { ExportJpgButton } from "@/components/export-jpg-button";
 import { LangToggle } from "@/components/lang-toggle";
+import { findUserByCredentials, writeSessionUser } from "@/lib/client-auth";
 import { useT } from "@/lib/i18n/locale-provider";
 
 function LoginForm() {
   const params = useSearchParams();
+  const router = useRouter();
   const t = useT();
-  const error = params.get("error");
   const next = params.get("next") || "/app";
+  const [error, setError] = useState(params.get("error") === "1");
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const user = findUserByCredentials(
+      String(form.get("email") ?? ""),
+      String(form.get("password") ?? ""),
+    );
+    if (!user) {
+      setError(true);
+      return;
+    }
+    writeSessionUser(user);
+    router.replace(next.startsWith("/") ? next : "/app");
+  }
 
   return (
     <main className="auth-page">
@@ -19,7 +36,7 @@ function LoginForm() {
         <ExportJpgButton />
         <LangToggle />
       </div>
-      <form action="/api/login" method="post" className="auth-card">
+      <form onSubmit={onSubmit} className="auth-card">
         <p className="eyebrow">{t("login.eyebrow")}</p>
         <h1>{t("login.title")}</h1>
         <p className="subtitle">{t("login.subtitle")}</p>
@@ -28,7 +45,6 @@ function LoginForm() {
             {t("login.error")}
           </p>
         )}
-        <input type="hidden" name="next" value={next} />
         <label>
           {t("login.username")}
           <input

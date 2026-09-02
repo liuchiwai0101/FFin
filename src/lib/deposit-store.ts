@@ -1,19 +1,9 @@
 import fs from "fs";
 import path from "path";
-import type { DepositItem } from "@/lib/excel-data";
+import type { DepositItem } from "@/lib/excel-parse";
+import type { DepositRecord, DepositStore } from "@/lib/deposit-types";
 
-export type DepositRecord = Omit<DepositItem, "fromDate" | "toDate" | "id"> & {
-  id: string;
-  fromDate: Date | null;
-  toDate: Date | null;
-  notes?: string | null;
-};
-
-export type DepositStore = {
-  syncedAt: string | null;
-  activeItems: DepositItem[];
-  historyItems: DepositItem[];
-};
+export type { DepositItem, DepositRecord, DepositStore } from "@/lib/deposit-types";
 
 const EMPTY: DepositStore = {
   syncedAt: null,

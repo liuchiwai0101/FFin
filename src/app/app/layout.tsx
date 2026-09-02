@@ -1,21 +1,5 @@
-import { AppNav } from "@/components/app-nav";
-import { DepositProvider } from "@/components/deposit-provider";
-import { UserProvider } from "@/components/user-context";
-import { requireUser } from "@/lib/access";
+import { AppShell } from "@/components/app-shell";
 
-export const dynamic = "force-dynamic";
-
-export default async function MemberLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireUser();
-
-  return (
-    <UserProvider user={user}>
-      <DepositProvider>
-        <div className="app-shell">
-          <AppNav user={user} />
-          <main className="app-main">{children}</main>
-        </div>
-      </DepositProvider>
-    </UserProvider>
-  );
+export default function MemberLayout({ children }: { children: React.ReactNode }) {
+  return <AppShell>{children}</AppShell>;
 }

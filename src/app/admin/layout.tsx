@@ -1,14 +1,9 @@
-import { AppNav } from "@/components/app-nav";
-import { requireStaff } from "@/lib/access";
+import { AuthGate } from "@/components/app-shell";
 
-export const dynamic = "force-dynamic";
-
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireStaff();
-  return (
-    <div className="app-shell">
-      <AppNav user={user} />
-      <main className="app-main">{children}</main>
-    </div>
-  );
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <AuthGate admin>{children}</AuthGate>;
 }

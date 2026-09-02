@@ -9,8 +9,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import type { DepositItem } from "@/lib/excel-data";
-import type { DepositRecord, DepositStore } from "@/lib/deposit-store";
+import type { DepositItem, DepositRecord, DepositStore } from "@/lib/deposit-types";
 import { useViewer } from "@/components/user-context";
 import { isExcelExpired, msUntilExcelClear } from "@/lib/excel-retention";
 import { canViewOwner, isAdmin } from "@/lib/users";

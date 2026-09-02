@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { useDepositData } from "@/components/deposit-provider";
 import { useLocale } from "@/lib/i18n/locale-provider";
 import { excelClearAt } from "@/lib/excel-retention";
+import { parseExcelArrayBuffer } from "@/lib/excel-parse";
 
 export default function SyncPageClient() {
   const router = useRouter();
@@ -23,14 +24,19 @@ export default function SyncPageClient() {
     setMessage("");
     startTransition(async () => {
       try {
-        const res = await fetch("/api/upload-excel", {
-          method: "POST",
-          body: formData,
-        });
-        const payload = await res.json();
-        if (!res.ok) {
-          throw new Error(payload.error || t("sync.uploadFailed"));
+        const file = formData.get("file");
+        if (!(file instanceof File) || file.size === 0) {
+          throw new Error(t("sync.uploadFailed"));
         }
+        const parsed = parseExcelArrayBuffer(await file.arrayBuffer());
+        if (!parsed) {
+          throw new Error(t("sync.uploadFailed"));
+        }
+        const payload = {
+          syncedAt: new Date().toISOString(),
+          activeItems: parsed.activeItems,
+          historyItems: parsed.historyItems,
+        };
         replaceStore(payload);
         setMessage(
           t("sync.loaded", {
