@@ -1,40 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { domToJpeg } from "modern-screenshot";
 import { useLocale } from "@/lib/i18n/locale-provider";
-
-function getExportRoot(): HTMLElement {
-  return (
-    document.querySelector<HTMLElement>(".app-main") ??
-    document.querySelector<HTMLElement>("main") ??
-    document.body
-  );
-}
-
-function downloadFilename(): string {
-  const date = new Date().toISOString().slice(0, 10);
-  return `family-finance-${date}.jpg`;
-}
-
-function exportScale(root: HTMLElement): number {
-  const maxDimension = 8192;
-  const preferred = Math.min(2, window.devicePixelRatio || 1);
-  const height = root.scrollHeight * preferred;
-  const width = root.scrollWidth * preferred;
-  if (height <= maxDimension && width <= maxDimension) return preferred;
-  return Math.min(maxDimension / root.scrollHeight, maxDimension / root.scrollWidth, 1);
-}
-
-function downloadDataUrl(dataUrl: string, filename: string) {
-  const link = document.createElement("a");
-  link.href = dataUrl;
-  link.download = filename;
-  link.rel = "noopener";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+import {
+  captureFullPageJpeg,
+  downloadDataUrl,
+  exportFilename,
+  getExportRoot,
+} from "@/lib/page-screenshot";
 
 export function ExportJpgButton({ className = "" }: { className?: string }) {
   const { t } = useLocale();
@@ -48,20 +21,13 @@ export function ExportJpgButton({ className = "" }: { className?: string }) {
 
     try {
       const root = getExportRoot();
-      window.scrollTo(0, 0);
-
-      const dataUrl = await domToJpeg(root, {
-        quality: 0.92,
-        scale: exportScale(root),
-        backgroundColor: "#f8fafc",
-        filter: (node) => !(node instanceof Element && node.classList.contains("no-print")),
-      });
+      const dataUrl = await captureFullPageJpeg(root);
 
       if (!dataUrl.startsWith("data:image/jpeg")) {
         throw new Error("Failed to create JPEG");
       }
 
-      downloadDataUrl(dataUrl, downloadFilename());
+      downloadDataUrl(dataUrl, exportFilename());
     } catch (err) {
       console.error("Export JPG failed:", err);
       setError(t("common.exportFailed"));
