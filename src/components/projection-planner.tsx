@@ -107,7 +107,7 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
   return (
     <section
       id="projection-planner-root"
-      className="card shadow-sm border-teal-100 space-y-6 w-full min-w-0"
+      className="card shadow-sm border-teal-100 space-y-4 w-full min-w-0"
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div>
@@ -228,66 +228,68 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
       />
 
       <div id="projection-breakdown">
-        <h3 className="text-sm font-bold text-slate-900 mb-3">
+        <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
           {t("overview.detailedBreakdown")}
         </h3>
         <div className="projection-table-wrap">
           <table className="projection-table">
             <thead>
-              <tr className="bg-slate-50 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                <th className="px-3 py-2.5">{t("overview.yearCol")}</th>
-                <th className="px-3 py-2.5">{t("overview.colConservativeRate")}</th>
-                <th className="px-3 py-2.5">{t("overview.colConservativeBalance")}</th>
-                <th className="px-3 py-2.5">{t("overview.colConservativeInterest")}</th>
-                <th className="px-3 py-2.5">{t("overview.colTargetRate")}</th>
-                <th className="px-3 py-2.5">{t("overview.colTargetBalance")}</th>
-                <th className="px-3 py-2.5">{t("overview.colTargetInterest")}</th>
+              <tr className="bg-slate-50 text-left font-bold uppercase tracking-wide text-slate-500">
+                <th>{t("overview.yearCol")}</th>
+                <th>{t("overview.colConservativeRate")}</th>
+                <th>{t("overview.colConservativeBalance")}</th>
+                <th>{t("overview.colConservativeInterest")}</th>
+                <th>{t("overview.colTargetRate")}</th>
+                <th>{t("overview.colTargetBalance")}</th>
+                <th>{t("overview.colTargetInterest")}</th>
               </tr>
             </thead>
             <tbody>
               {projectionRows.map((row, idx) => (
                 <tr key={idx} className="border-t border-slate-100 hover:bg-slate-50/60">
-                  <td className="px-3 py-3">
-                    <div className="font-bold text-slate-900">{t(YEAR_KEYS[idx])}</div>
-                    <div className="mt-1.5 h-1.5 w-20 rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-teal-500"
-                        style={{ width: `${((idx + 1) / 6) * 100}%` }}
-                      />
+                  <td>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-slate-900 w-8 shrink-0">{t(YEAR_KEYS[idx])}</span>
+                      <div className="h-1 w-10 rounded-full bg-slate-100 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-teal-500"
+                          style={{ width: `${((idx + 1) / 6) * 100}%` }}
+                        />
+                      </div>
                     </div>
                   </td>
-                  <td className="px-3 py-3">
+                  <td>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
-                      className="w-20 rounded border border-slate-200 px-2 py-1 font-mono text-center"
+                      className="rounded border border-slate-200 font-mono text-center"
                       value={rateToPercentInput(row.cRate)}
                       onChange={(e) => setConservativeRate(idx, e.target.value)}
                       aria-label={`${t(YEAR_KEYS[idx])} ${t("overview.conservative")}`}
                     />
                   </td>
-                  <td className="px-3 py-3 font-mono font-semibold text-slate-900 whitespace-nowrap">
+                  <td className="font-mono font-semibold text-slate-900 whitespace-nowrap">
                     {formatAmount(row.cBase, "HKD")}
                   </td>
-                  <td className="px-3 py-3 font-mono font-semibold text-emerald-700 whitespace-nowrap">
+                  <td className="font-mono font-semibold text-emerald-700 whitespace-nowrap">
                     +{formatAmount(row.cInterest, "HKD")}
                   </td>
-                  <td className="px-3 py-3">
+                  <td>
                     <input
                       type="number"
                       step="0.1"
                       min="0"
-                      className="w-20 rounded border border-emerald-200 px-2 py-1 font-mono text-center"
+                      className="rounded border border-emerald-200 font-mono text-center"
                       value={rateToPercentInput(row.tRate)}
                       onChange={(e) => setTargetRate(idx, e.target.value)}
                       aria-label={`${t(YEAR_KEYS[idx])} ${t("overview.target")}`}
                     />
                   </td>
-                  <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
+                  <td className="font-mono font-bold text-slate-900 whitespace-nowrap">
                     {formatAmount(row.tBase, "HKD")}
                   </td>
-                  <td className="px-3 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap">
+                  <td className="font-mono font-bold text-emerald-700 whitespace-nowrap">
                     +{formatAmount(row.tInterest, "HKD")}
                   </td>
                 </tr>

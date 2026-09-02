@@ -265,13 +265,27 @@ table {
 .projection-table {
   width: 100%;
   min-width: 42rem;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
 }
 
 .projection-table th,
 .projection-table td {
-  padding: 0.65rem 0.75rem;
+  padding: 0.35rem 0.5rem;
   white-space: nowrap;
+  vertical-align: middle;
+}
+
+.projection-table th {
+  font-size: 0.5625rem;
+  letter-spacing: 0.04em;
+}
+
+.projection-table input {
+  width: 3.5rem;
+  margin-top: 0;
+  padding: 0.15rem 0.25rem;
+  font-size: 0.6875rem;
+  line-height: 1.2;
 }
 
 th {
