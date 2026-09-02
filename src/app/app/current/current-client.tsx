@@ -51,6 +51,11 @@ export default function CurrentProductsPage() {
     { id: "Demand", label: t("current.typeDemand") },
   ];
 
+  const currentHref = (user: string, bank: string, type: string) => {
+    const query = new URLSearchParams({ user, bank, type });
+    return `/app/current?${query.toString()}`;
+  };
+
   if (!ready) {
     return <div className="card p-6 text-sm text-slate-500">{t("common.loading")}</div>;
   }
@@ -96,9 +101,9 @@ export default function CurrentProductsPage() {
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-16">{t("current.member")}:</span>
           <div className="flex flex-wrap gap-1.5">
             {users.map((u) => (
-              <a
+              <Link
                 key={u}
-                href={`/app/current?user=${u}&bank=${bankFilter}&type=${typeFilter}`}
+                href={currentHref(u, bankFilter, typeFilter)}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
                   userFilter === u
                     ? "bg-teal-700 text-white shadow-sm"
@@ -106,7 +111,7 @@ export default function CurrentProductsPage() {
                 }`}
               >
                 {u}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -117,9 +122,9 @@ export default function CurrentProductsPage() {
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-16">{t("current.bank")}:</span>
           <div className="flex flex-wrap gap-1.5">
             {banks.map((b) => (
-              <a
+              <Link
                 key={b}
-                href={`/app/current?user=${userFilter}&bank=${b}&type=${typeFilter}`}
+                href={currentHref(userFilter, b, typeFilter)}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
                   bankFilter === b
                     ? "bg-teal-700 text-white shadow-sm"
@@ -127,7 +132,7 @@ export default function CurrentProductsPage() {
                 }`}
               >
                 {b}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -137,9 +142,9 @@ export default function CurrentProductsPage() {
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-16">{t("current.type")}:</span>
           <div className="flex flex-wrap gap-1.5">
             {types.map((t) => (
-              <a
+              <Link
                 key={t.id}
-                href={`/app/current?user=${userFilter}&bank=${bankFilter}&type=${t.id}`}
+                href={currentHref(userFilter, bankFilter, t.id)}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
                   typeFilter === t.id
                     ? "bg-teal-700 text-white shadow-sm"
@@ -147,7 +152,7 @@ export default function CurrentProductsPage() {
                 }`}
               >
                 {t.label}
-              </a>
+              </Link>
             ))}
           </div>
         </div>

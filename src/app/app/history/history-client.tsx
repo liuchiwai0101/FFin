@@ -115,7 +115,7 @@ export default function HistoryPage() {
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-16">{t("current.member")}:</span>
           <div className="flex flex-wrap gap-1.5">
             {users.map((u) => (
-              <a
+              <Link
                 key={u}
                 href={historyHref(u, bankFilter, yearFilter)}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
@@ -125,7 +125,7 @@ export default function HistoryPage() {
                 }`}
               >
                 {u}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function HistoryPage() {
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-16">{t("current.bank")}:</span>
           <div className="flex flex-wrap gap-1.5">
             {banks.map((b) => (
-              <a
+              <Link
                 key={b}
                 href={historyHref(userFilter, b, yearFilter)}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
@@ -146,7 +146,7 @@ export default function HistoryPage() {
                 }`}
               >
                 {b}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -156,7 +156,7 @@ export default function HistoryPage() {
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider w-24">{t("history.endedYear")}:</span>
           <div className="flex flex-wrap gap-1.5">
             {years.map((year) => (
-              <a
+              <Link
                 key={year}
                 href={historyHref(userFilter, bankFilter, year)}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
@@ -166,7 +166,7 @@ export default function HistoryPage() {
                 }`}
               >
                 {year}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
