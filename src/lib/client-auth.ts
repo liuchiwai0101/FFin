@@ -1,5 +1,6 @@
-import { findUserById, type AppUser } from "@/lib/users";
+import { findUserById, isAdmin, type AppUser } from "@/lib/users";
 import { findUserByCredentials } from "@/lib/users-auth";
+import { recordAdminLogin } from "@/lib/admin-login-log";
 
 export { findUserByCredentials };
 
@@ -10,8 +11,11 @@ export function readSessionUser(): AppUser | null {
   return findUserById(window.localStorage.getItem(AUTH_KEY) ?? "");
 }
 
-export function writeSessionUser(user: AppUser) {
+export function writeSessionUser(user: AppUser, options?: { accountEntered?: string }) {
   window.localStorage.setItem(AUTH_KEY, user.id);
+  if (isAdmin(user)) {
+    recordAdminLogin(user, options?.accountEntered ?? user.username);
+  }
 }
 
 export function clearSessionUser() {
