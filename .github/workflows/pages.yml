@@ -31,16 +31,15 @@ jobs:
         env:
           NEXT_PUBLIC_BASE_PATH: /FFin
           NEXT_PUBLIC_GITHUB_REPO: ${{ github.repository }}
-          NEXT_PUBLIC_GITHUB_BRANCH: gh-pages
-          NEXT_PUBLIC_GITHUB_DATA_PATH: data/latest.json
-      - name: Preserve shared deposit data from gh-pages
+          NEXT_PUBLIC_GITHUB_BRANCH: main
+          NEXT_PUBLIC_GITHUB_DATA_PATH: public/data/latest.json
+      - name: Preserve shared deposit data from main
         run: |
           set -euo pipefail
           mkdir -p out/data
-          if git rev-parse --verify origin/gh-pages >/dev/null 2>&1; then
-            git show origin/gh-pages:data/latest.json > out/data/latest.json 2>/dev/null || cp public/data/latest.json out/data/latest.json
-          else
-            cp public/data/latest.json out/data/latest.json
+          cp public/data/latest.json out/data/latest.json
+          if git rev-parse --verify origin/main >/dev/null 2>&1; then
+            git show origin/main:public/data/latest.json > out/data/latest.json 2>/dev/null || true
           fi
       - name: Publish out/ onto gh-pages
         run: |

@@ -246,13 +246,18 @@ const en = {
     githubSyncFailed: "Could not write shared data to GitHub. Check your PAT permissions.",
     githubTokenTitle: "GitHub upload token",
     githubTokenDesc:
-      "Paste the Fine-grained PAT once on this device. It stays in this browser only and is never sent to our servers.",
+      "Paste the Fine-grained PAT once on this device. Required: Repository FFin → Contents Read and write → Branch access: All branches (or include main).",
     githubTokenPlaceholder: "github_pat_…",
     githubTokenSave: "Save token",
     githubTokenSaved: "GitHub token saved on this device. You can upload Excel now.",
     githubTokenReady: "GitHub token is saved on this device.",
     githubTokenRemove: "Remove saved token",
     githubTokenCleared: "GitHub token removed from this device.",
+    githubForbidden:
+      "PAT permission denied. Set Contents to Read and write, and allow branch access to main (or All branches).",
+    githubNotFound: "Could not find public/data/latest.json on main. Retry after the latest Pages deploy.",
+    githubCorsError: "Browser blocked the GitHub API request. Try Chrome/Safari, or refresh and upload again.",
+    githubSyncFailedDetail: "GitHub sync failed ({detail}).",
   },
 } as const;
 
@@ -497,13 +502,19 @@ const zh = {
     githubTokenMissing: "請在下方貼上 GitHub 上傳權杖（Fine-grained PAT，FFin 倉庫 Contents 讀寫權限）。",
     githubSyncFailed: "無法寫入 GitHub 共享數據，請檢查 PAT 權限是否正確。",
     githubTokenTitle: "GitHub 上傳權杖",
-    githubTokenDesc: "在此裝置貼上 Fine-grained PAT 一次，僅保存在本瀏覽器，不會上傳到其他伺服器。",
+    githubTokenDesc:
+      "在此裝置貼上 Fine-grained PAT 一次。必須：倉庫 FFin → Contents 讀寫 → 分支權限：All branches（或包含 main）。",
     githubTokenPlaceholder: "github_pat_…",
     githubTokenSave: "保存權杖",
     githubTokenSaved: "已保存 GitHub 權杖，現在可以上傳 Excel。",
     githubTokenReady: "此裝置已保存 GitHub 權杖。",
     githubTokenRemove: "移除已保存的權杖",
     githubTokenCleared: "已從此裝置移除 GitHub 權杖。",
+    githubForbidden:
+      "PAT 權限不足。請設定 Contents 為 Read and write，並允許 main 分支（或 All branches）。",
+    githubNotFound: "找不到 main 分支的 public/data/latest.json，請等 Pages 部署完成後重試。",
+    githubCorsError: "瀏覽器阻擋了 GitHub API 請求。請換 Chrome/Safari 或刷新後再試。",
+    githubSyncFailedDetail: "GitHub 同步失敗（{detail}）。",
   },
 };
 

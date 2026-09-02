@@ -13,6 +13,7 @@ import type { DepositItem, DepositRecord, DepositStore } from "@/lib/deposit-typ
 import {
   clearSharedDepositStore,
   fetchSharedDepositStore,
+  getLastGitHubSyncError,
   isGitHubSyncConfigured,
   pushSharedDepositStore,
 } from "@/lib/github-sync";
@@ -200,7 +201,8 @@ export function DepositProvider({ children }: { children: ReactNode }) {
         syncedAt: normalized.syncedAt,
       });
       if (isGitHubSyncConfigured() && !remote) {
-        throw new Error("github_sync_failed");
+        const detail = getLastGitHubSyncError();
+        throw new Error(detail ? `github_sync_failed:${detail.status}:${detail.message}` : "github_sync_failed");
       }
       persistLocal(remote ? normalizeStore(remote) : normalized);
     },

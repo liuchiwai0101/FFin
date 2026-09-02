@@ -10,18 +10,27 @@ import {
 
 type GitHubContentMeta = {
   sha: string;
+  message?: string;
 };
+
+export type GitHubSyncError = {
+  status: number;
+  message: string;
+};
+
+type WriteResult = { ok: true } | { ok: false; error: GitHubSyncError };
 
 function githubRepo(): string {
   return process.env.NEXT_PUBLIC_GITHUB_REPO || "liuchiwai0101/FFin";
 }
 
+/** Write to main branch so Fine-grained PATs scoped to default branch work. */
 function githubBranch(): string {
-  return process.env.NEXT_PUBLIC_GITHUB_BRANCH || "gh-pages";
+  return process.env.NEXT_PUBLIC_GITHUB_BRANCH || "main";
 }
 
 function githubDataPath(): string {
-  return process.env.NEXT_PUBLIC_GITHUB_DATA_PATH || "data/latest.json";
+  return process.env.NEXT_PUBLIC_GITHUB_DATA_PATH || "public/data/latest.json";
 }
 
 function githubToken(): string | null {
@@ -31,19 +40,24 @@ function githubToken(): string | null {
 export function sharedDataReadUrl(): string {
   const custom = process.env.NEXT_PUBLIC_SHARED_DATA_URL;
   if (custom) return custom;
-  const basePath = (process.env.NEXT_PUBLIC_BASE_PATH || "").replace(/\/$/, "");
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}${basePath}/data/latest.json`;
-  }
-  return `${basePath}/data/latest.json`;
+  const [owner, repo] = githubRepo().split("/");
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${githubBranch()}/${githubDataPath()}`;
 }
 
 function githubHeaders(token: string): HeadersInit {
   return {
     Accept: "application/vnd.github+json",
     Authorization: `Bearer ${token}`,
-    "X-GitHub-Api-Version": "2022-11-28",
   };
+}
+
+async function parseGitHubError(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { message?: string };
+    return body.message || response.statusText;
+  } catch {
+    return response.statusText || "Request failed";
+  }
 }
 
 function toBase64Utf8(text: string): string {
@@ -63,14 +77,17 @@ async function readContentSha(token: string): Promise<string | undefined> {
     `https://api.github.com/repos/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`,
     { headers: githubHeaders(token), cache: "no-store" },
   );
+  if (response.status === 404) return undefined;
   if (!response.ok) return undefined;
   const meta = (await response.json()) as GitHubContentMeta;
   return meta.sha;
 }
 
-async function writeSharedPayload(payload: SharedDepositPayload, message: string): Promise<boolean> {
+async function writeSharedPayload(payload: SharedDepositPayload, message: string): Promise<WriteResult> {
   const token = githubToken();
-  if (!token) return false;
+  if (!token) {
+    return { ok: false, error: { status: 0, message: "missing_token" } };
+  }
 
   const repo = githubRepo();
   const path = githubDataPath();
@@ -78,22 +95,37 @@ async function writeSharedPayload(payload: SharedDepositPayload, message: string
   const sha = await readContentSha(token);
   const body = serializeSharedPayload(payload);
 
-  const response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
-    method: "PUT",
-    headers: {
-      ...githubHeaders(token),
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      message,
-      content: toBase64Utf8(body),
-      branch,
-      ...(sha ? { sha } : {}),
-    }),
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+      method: "PUT",
+      headers: {
+        ...githubHeaders(token),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message,
+        content: toBase64Utf8(body),
+        branch,
+        ...(sha ? { sha } : {}),
+      }),
+      cache: "no-store",
+    });
+  } catch (err) {
+    const hint =
+      err instanceof TypeError
+        ? "network_or_cors"
+        : err instanceof Error
+          ? err.message
+          : "network_error";
+    return { ok: false, error: { status: 0, message: hint } };
+  }
 
-  return response.ok;
+  if (!response.ok) {
+    return { ok: false, error: { status: response.status, message: await parseGitHubError(response) } };
+  }
+
+  return { ok: true };
 }
 
 export async function fetchSharedDepositStore(): Promise<DepositStore | null> {
@@ -106,14 +138,24 @@ export async function fetchSharedDepositStore(): Promise<DepositStore | null> {
   }
 }
 
+let lastSyncError: GitHubSyncError | null = null;
+
+export function getLastGitHubSyncError(): GitHubSyncError | null {
+  return lastSyncError;
+}
+
 export async function pushSharedDepositStore(store: DepositStore): Promise<DepositStore | null> {
   const payload = createSharedPayload({
     syncedAt: store.syncedAt,
     activeItems: store.activeItems,
     historyItems: store.historyItems,
   });
-  const ok = await writeSharedPayload(payload, "FFin: sync shared deposit data");
-  if (!ok) return null;
+  const result = await writeSharedPayload(payload, "FFin: sync shared deposit data");
+  if (!result.ok) {
+    lastSyncError = result.error;
+    return null;
+  }
+  lastSyncError = null;
   return {
     syncedAt: payload.syncedAt,
     activeItems: payload.activeItems,
@@ -122,9 +164,21 @@ export async function pushSharedDepositStore(store: DepositStore): Promise<Depos
 }
 
 export async function clearSharedDepositStore(): Promise<boolean> {
-  return writeSharedPayload(createEmptySharedPayload(), "FFin: clear expired shared deposit data");
+  const result = await writeSharedPayload(createEmptySharedPayload(), "FFin: clear expired shared deposit data");
+  return result.ok;
 }
 
 export function isGitHubSyncConfigured(): boolean {
   return Boolean(githubToken());
+}
+
+export function formatGitHubSyncError(
+  error: GitHubSyncError,
+  translate: (key: "sync.githubTokenMissing" | "sync.githubCorsError" | "sync.githubForbidden" | "sync.githubNotFound" | "sync.githubSyncFailedDetail") => string,
+): string {
+  if (error.message === "missing_token") return translate("sync.githubTokenMissing");
+  if (error.message === "network_or_cors") return translate("sync.githubCorsError");
+  if (error.status === 403) return translate("sync.githubForbidden");
+  if (error.status === 404) return translate("sync.githubNotFound");
+  return translate("sync.githubSyncFailedDetail").replace("{detail}", `${error.status}: ${error.message}`);
 }

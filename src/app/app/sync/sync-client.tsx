@@ -8,6 +8,7 @@ import { useLocale } from "@/lib/i18n/locale-provider";
 import { downloadDepositBackup, parseDepositBackup } from "@/lib/deposit-backup";
 import { excelClearAt } from "@/lib/excel-retention";
 import { parseExcelArrayBuffer } from "@/lib/excel-parse";
+import { formatGitHubSyncError } from "@/lib/github-sync";
 import {
   clearGitHubSyncToken,
   hasGitHubSyncToken,
@@ -75,8 +76,18 @@ export default function SyncPageClient() {
         event.currentTarget.reset();
         router.refresh();
       } catch (err) {
-        if (err instanceof Error && err.message === "github_sync_failed") {
-          setError(t("sync.githubSyncFailed"));
+        if (err instanceof Error && err.message.startsWith("github_sync_failed")) {
+          const parts = err.message.split(":");
+          if (parts.length >= 3) {
+            setError(
+              formatGitHubSyncError(
+                { status: Number(parts[1]) || 0, message: parts.slice(2).join(":") },
+                t,
+              ),
+            );
+          } else {
+            setError(t("sync.githubSyncFailed"));
+          }
           return;
         }
         setError(err instanceof Error ? err.message : t("sync.uploadFailed"));
