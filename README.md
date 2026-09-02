@@ -33,27 +33,34 @@ If github.io is slow after it is live:
 
 Download **[docs/Family-Finance-Portable.html](docs/Family-Finance-Portable.html)**. Open in a browser, upload Excel — no server.
 
-## Shared data across devices
+## Shared data via GitHub (no server)
 
-Vin’s Excel upload is stored on a **shared server** (`/api/deposit`). Every phone and computer reads the same dataset. Data **auto-clears 48 hours** after upload for everyone.
+Vin’s Excel upload is converted to a **fixed JSON file** and written to GitHub:
 
-### GitHub Pages + API (China)
+- **Path:** `gh-pages/data/latest.json`
+- **Read:** every device fetches `https://liuchiwai0101.github.io/FFin/data/latest.json`
+- **Write:** admin upload uses the GitHub Contents API
+- **Expiry:** `expiresAt` is set to 48 hours after upload; a scheduled GitHub Action clears the file when expired
 
-GitHub Pages serves the static UI only. Deploy the API once (Docker below), then add a repo secret:
+### One-time setup
 
-- **`FFIN_API_BASE`** = your API URL, e.g. `https://ffin.example.com` (no trailing slash)
+1. Create a **fine-grained GitHub PAT** with **Contents: Read and write** on this repo (`gh-pages` branch).
+2. Add repo secret **`FFIN_GITHUB_TOKEN`** with that PAT.
+3. Merge to `main` — the Pages workflow bakes the token into the static build for admin uploads.
 
-Pushes to `main` rebuild Pages with that API URL baked in.
+> The token is embedded in the client bundle for admin writes. Use a PAT limited to this repo only, and rotate if needed.
 
-### Docker (UI + shared API)
+### JSON format (`data/latest.json`)
 
-```bash
-docker compose up -d --build
+```json
+{
+  "version": 1,
+  "syncedAt": "2026-09-02T12:00:00.000Z",
+  "expiresAt": "2026-09-04T12:00:00.000Z",
+  "activeItems": [],
+  "historyItems": []
+}
 ```
-
-Open http://localhost:3000 → Sign in as Vin → Sync Excel → upload `Summary.xlsx`. All family members on any device see the same data until the 48-hour timer expires.
-
-Data persists in the `ffin-data` Docker volume (`data/latest.json`).
 
 ## Local Next.js
 

@@ -13,8 +13,9 @@ import type { DepositItem, DepositRecord, DepositStore } from "@/lib/deposit-typ
 import {
   clearSharedDepositStore,
   fetchSharedDepositStore,
+  isGitHubSyncConfigured,
   pushSharedDepositStore,
-} from "@/lib/deposit-api";
+} from "@/lib/github-sync";
 import { useViewer } from "@/components/user-context";
 import { isExcelExpired, msUntilExcelClear } from "@/lib/excel-retention";
 import { canViewOwner, isAdmin } from "@/lib/users";
@@ -198,6 +199,9 @@ export function DepositProvider({ children }: { children: ReactNode }) {
         historyItems: normalized.historyItems,
         syncedAt: normalized.syncedAt,
       });
+      if (isGitHubSyncConfigured() && !remote) {
+        throw new Error("github_sync_failed");
+      }
       persistLocal(remote ? normalizeStore(remote) : normalized);
     },
     [viewer],

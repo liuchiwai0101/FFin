@@ -8,6 +8,7 @@ import { useLocale } from "@/lib/i18n/locale-provider";
 import { downloadDepositBackup, parseDepositBackup } from "@/lib/deposit-backup";
 import { excelClearAt } from "@/lib/excel-retention";
 import { parseExcelArrayBuffer } from "@/lib/excel-parse";
+import { isGitHubSyncConfigured } from "@/lib/github-sync";
 
 export default function SyncPageClient() {
   const router = useRouter();
@@ -50,6 +51,10 @@ export default function SyncPageClient() {
         event.currentTarget.reset();
         router.refresh();
       } catch (err) {
+        if (err instanceof Error && err.message === "github_sync_failed") {
+          setError(t("sync.githubSyncFailed"));
+          return;
+        }
         setError(err instanceof Error ? err.message : t("sync.uploadFailed"));
       }
     });
@@ -100,6 +105,11 @@ export default function SyncPageClient() {
         <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           {t("sync.deviceNote")}
         </p>
+        {!isGitHubSyncConfigured() && (
+          <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
+            {t("sync.githubTokenMissing")}
+          </p>
+        )}
         {ready && store.syncedAt && (
           <>
             <p className="mt-2 text-xs text-teal-700 font-semibold">

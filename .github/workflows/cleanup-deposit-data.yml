@@ -1,0 +1,61 @@
+name: Cleanup expired deposit data
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+      - name: Clear expired shared data on gh-pages
+        run: |
+          set -euo pipefail
+          FILE="data/latest.json"
+          if [ ! -f "$FILE" ]; then
+            echo "No shared data file yet."
+            exit 0
+          fi
+          node <<'NODE'
+          const fs = require("fs");
+          const path = "data/latest.json";
+          const raw = JSON.parse(fs.readFileSync(path, "utf8"));
+          const now = Date.now();
+          const expiresAt = raw.expiresAt ? Date.parse(raw.expiresAt) : NaN;
+          const syncedAt = raw.syncedAt ? Date.parse(raw.syncedAt) : NaN;
+          const retentionMs = 48 * 60 * 60 * 1000;
+          const expiredByExpiresAt = Number.isFinite(expiresAt) && now >= expiresAt;
+          const expiredBySyncedAt = Number.isFinite(syncedAt) && now >= syncedAt + retentionMs;
+          if (!expiredByExpiresAt && !expiredBySyncedAt) {
+            console.log("Shared data still valid.");
+            process.exit(0);
+          }
+          const empty = {
+            version: 1,
+            syncedAt: null,
+            expiresAt: null,
+            activeItems: [],
+            historyItems: [],
+          };
+          fs.writeFileSync(path, `${JSON.stringify(empty, null, 2)}\n`);
+          console.log("Cleared expired shared data.");
+          NODE
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet -- data/latest.json; then
+            echo "No changes to publish."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/latest.json
+          git commit -m "FFin: clear expired shared deposit data"
+          git push origin HEAD:gh-pages

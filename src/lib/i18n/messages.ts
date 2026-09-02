@@ -56,7 +56,7 @@ const en = {
       "No shared data is loaded yet. Upload Summary.xlsx on the Sync page — all family members on every device will see it.",
     emptyMember:
       "No shared data is loaded yet. Ask an admin (Vin) to upload Summary.xlsx — everyone will see it on all devices.",
-    emptyDeviceNote: "Data is shared across all devices and clears automatically 48 hours after upload.",
+    emptyDeviceNote: "Data lives in a shared GitHub JSON file and clears 48 hours after upload.",
     uploadExcel: "Upload Excel",
     eyebrow: "Portfolio Distribution & Yield",
     title: "Asset Snapshot & Bank Interest Summary",
@@ -212,10 +212,10 @@ const en = {
   sync: {
     eyebrow: "Data Management",
     title: "Upload & Sync Excel Sheet",
-    desc: "Upload Summary.xlsx once — all family members see the same data on every device. Shared data clears 48 hours after upload.",
+    desc: "Upload Summary.xlsx once — data is saved to GitHub as data/latest.json and shared on every device. Clears automatically after 48 hours.",
     deviceNote:
-      "Vin’s upload is shared globally. Every phone and computer reads the same dataset until the 48-hour timer expires.",
-    storedBrowser: "Shared across devices",
+      "Shared file: gh-pages/data/latest.json on GitHub. All phones and computers read the same JSON until the 48-hour timer expires.",
+    storedBrowser: "Synced via GitHub",
     lastLoaded: "Last loaded: {date}",
     clearAt: "Auto-clears: {date}",
     activeRecords: "Active Portfolio Records",
@@ -241,6 +241,9 @@ const en = {
     importing: "Importing…",
     importFailed: "Import failed. Choose a valid FFin backup file.",
     imported: "Imported {active} active and {history} history rows.",
+    githubTokenMissing:
+      "GitHub upload token is not configured. Add repo secret FFIN_GITHUB_TOKEN and rebuild Pages.",
+    githubSyncFailed: "Could not write shared data to GitHub. Check FFIN_GITHUB_TOKEN permissions.",
   },
 } as const;
 
@@ -298,7 +301,7 @@ const zh = {
       "尚未載入共享數據。請在「同步 Excel」頁面上傳 Summary.xlsx，所有裝置上的家庭成員都能看到。",
     emptyMember:
       "尚未載入共享數據。請聯絡管理員（Vin）上傳 Summary.xlsx，上傳後所有裝置都能看到。",
-    emptyDeviceNote: "數據在所有裝置間共享，上傳後 48 小時自動清除。",
+    emptyDeviceNote: "數據保存在 GitHub 共享檔案中，上傳後 48 小時自動清除。",
     uploadExcel: "上傳 Excel",
     eyebrow: "投資組合分佈與收益",
     title: "資產快照與銀行利息摘要",
@@ -454,9 +457,9 @@ const zh = {
   sync: {
     eyebrow: "數據管理",
     title: "上傳及同步 Excel 表",
-    desc: "上傳一次 Summary.xlsx，所有裝置上的家庭成員都能看到相同數據。共享數據於上傳後 48 小時自動清除。",
-    deviceNote: "Vin 上傳後，所有手機和電腦讀取同一份數據，直至 48 小時計時結束。",
-    storedBrowser: "跨裝置共享",
+    desc: "上傳一次 Summary.xlsx，數據以固定 JSON 格式保存到 GitHub（data/latest.json），所有裝置共享。48 小時後自動清除。",
+    deviceNote: "共享檔案：GitHub gh-pages 分支的 data/latest.json。所有手機和電腦讀取同一份 JSON，直至 48 小時計時結束。",
+    storedBrowser: "GitHub 同步",
     lastLoaded: "上次載入：{date}",
     clearAt: "自動清除：{date}",
     activeRecords: "現有投資組合紀錄",
@@ -482,6 +485,8 @@ const zh = {
     importing: "匯入中…",
     importFailed: "匯入失敗，請選擇有效的 FFin 備份檔。",
     imported: "已匯入 {active} 項現有及 {history} 項歷史紀錄。",
+    githubTokenMissing: "尚未設定 GitHub 上傳權杖。請在倉庫 Secrets 新增 FFIN_GITHUB_TOKEN 並重新部署 Pages。",
+    githubSyncFailed: "無法寫入 GitHub 共享數據，請檢查 FFIN_GITHUB_TOKEN 權限。",
   },
 };
 

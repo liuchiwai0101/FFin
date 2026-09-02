@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 24
@@ -28,7 +30,19 @@ jobs:
         run: npm run build:pages
         env:
           NEXT_PUBLIC_BASE_PATH: /FFin
-          NEXT_PUBLIC_API_BASE: ${{ secrets.FFIN_API_BASE }}
+          NEXT_PUBLIC_GITHUB_REPO: ${{ github.repository }}
+          NEXT_PUBLIC_GITHUB_BRANCH: gh-pages
+          NEXT_PUBLIC_GITHUB_DATA_PATH: data/latest.json
+          NEXT_PUBLIC_GITHUB_SYNC_TOKEN: ${{ secrets.FFIN_GITHUB_TOKEN }}
+      - name: Preserve shared deposit data from gh-pages
+        run: |
+          set -euo pipefail
+          mkdir -p out/data
+          if git rev-parse --verify origin/gh-pages >/dev/null 2>&1; then
+            git show origin/gh-pages:data/latest.json > out/data/latest.json 2>/dev/null || cp public/data/latest.json out/data/latest.json
+          else
+            cp public/data/latest.json out/data/latest.json
+          fi
       - name: Publish out/ onto gh-pages
         run: |
           set -euo pipefail
