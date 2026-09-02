@@ -25,9 +25,10 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Build Next.js static export for /FFin
-        run: npm run build
+        run: npm run build:pages
         env:
           NEXT_PUBLIC_BASE_PATH: /FFin
+          NEXT_PUBLIC_API_BASE: ${{ secrets.FFIN_API_BASE }}
       - name: Publish out/ onto gh-pages
         run: |
           set -euo pipefail

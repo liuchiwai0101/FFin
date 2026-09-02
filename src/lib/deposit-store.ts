@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { DepositItem } from "@/lib/excel-parse";
 import type { DepositRecord, DepositStore } from "@/lib/deposit-types";
+import { isExcelExpired } from "@/lib/excel-retention";
 
 export type { DepositItem, DepositRecord, DepositStore } from "@/lib/deposit-types";
 
@@ -22,6 +23,12 @@ function ensureDataDir() {
   }
 }
 
+function writeStore(store: DepositStore): DepositStore {
+  ensureDataDir();
+  fs.writeFileSync(/*turbopackIgnore: true*/ dataFilePath(), JSON.stringify(store, null, 2), "utf8");
+  return store;
+}
+
 export function loadDepositStore(): DepositStore {
   const filePath = dataFilePath();
   try {
@@ -37,24 +44,32 @@ export function loadDepositStore(): DepositStore {
   }
 }
 
-export function saveDepositStore(items: {
-  activeItems: DepositItem[];
-  historyItems: DepositItem[];
-}): DepositStore {
-  ensureDataDir();
+/** Shared server store; clears globally when the 48h window has passed. */
+export function loadActiveDepositStore(): DepositStore {
+  const store = loadDepositStore();
+  if (isExcelExpired(store.syncedAt)) {
+    return clearDepositStore();
+  }
+  return store;
+}
+
+export function clearDepositStore(): DepositStore {
+  return writeStore({ ...EMPTY });
+}
+
+export function replaceDepositStore(store: DepositStore): DepositStore {
   const withIds: DepositStore = {
     syncedAt: new Date().toISOString(),
-    activeItems: items.activeItems.map((item, i) => ({
+    activeItems: store.activeItems.map((item, i) => ({
       ...item,
       id: item.id || `active-${i}-${item.ownerName}-${item.bank}-${item.amount}`,
     })),
-    historyItems: items.historyItems.map((item, i) => ({
+    historyItems: store.historyItems.map((item, i) => ({
       ...item,
       id: item.id || `history-${i}-${item.ownerName}-${item.bank}-${item.amount}`,
     })),
   };
-  fs.writeFileSync(/*turbopackIgnore: true*/ dataFilePath(), JSON.stringify(withIds, null, 2), "utf8");
-  return withIds;
+  return writeStore(withIds);
 }
 
 function toRecord(item: DepositItem, fallbackId: string): DepositRecord {
@@ -87,12 +102,13 @@ export function upsertDepositRecord(record: DepositItem & { id?: string; isCurre
   } else {
     store.historyItems = [...store.historyItems.filter((r) => r.id !== id), item];
   }
-  return saveDepositStore(store);
+  return replaceDepositStore(store);
 }
 
 export function deleteDepositById(id: string) {
   const store = loadDepositStore();
   const next = {
+    syncedAt: store.syncedAt,
     activeItems: store.activeItems.filter((r) => r.id !== id),
     historyItems: store.historyItems.filter((r) => r.id !== id),
   };
@@ -100,5 +116,5 @@ export function deleteDepositById(id: string) {
     store.activeItems.length + store.historyItems.length !==
     next.activeItems.length + next.historyItems.length;
   if (!removed) throw new Error("Record was not found.");
-  return saveDepositStore(next);
+  return replaceDepositStore(next);
 }

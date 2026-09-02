@@ -18,3 +18,8 @@ export function clearSessionUser() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(AUTH_KEY);
 }
+
+export function getAuthHeaders(): Record<string, string> {
+  const user = readSessionUser();
+  return user ? { "X-FFin-User-Id": user.id } : {};
+}

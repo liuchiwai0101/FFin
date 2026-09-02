@@ -10,11 +10,17 @@ import {
   type ReactNode,
 } from "react";
 import type { DepositItem, DepositRecord, DepositStore } from "@/lib/deposit-types";
+import {
+  clearSharedDepositStore,
+  fetchSharedDepositStore,
+  pushSharedDepositStore,
+} from "@/lib/deposit-api";
 import { useViewer } from "@/components/user-context";
 import { isExcelExpired, msUntilExcelClear } from "@/lib/excel-retention";
 import { canViewOwner, isAdmin } from "@/lib/users";
 
 const STORAGE_KEY = "ffin_deposit_store_v1";
+const SYNC_POLL_MS = 30_000;
 
 const EMPTY: DepositStore = {
   syncedAt: null,
@@ -27,10 +33,10 @@ type DepositContextValue = {
   store: DepositStore;
   activeRecords: DepositRecord[];
   historyRecords: DepositRecord[];
-  replaceStore: (next: DepositStore) => void;
-  clearStore: () => void;
-  upsertRecord: (record: DepositItem & { isCurrent: boolean; id?: string }) => void;
-  deleteRecord: (id: string) => void;
+  replaceStore: (next: DepositStore) => Promise<void>;
+  clearStore: () => Promise<void>;
+  upsertRecord: (record: DepositItem & { isCurrent: boolean; id?: string }) => Promise<void>;
+  deleteRecord: (id: string) => Promise<void>;
 };
 
 const DepositContext = createContext<DepositContextValue | null>(null);
@@ -111,7 +117,7 @@ function subscribe(onStoreChange: () => void) {
   };
 }
 
-function persist(store: DepositStore) {
+function persistLocal(store: DepositStore) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
   cachedJson = window.localStorage.getItem(STORAGE_KEY);
   cachedStore = store;
@@ -135,16 +141,44 @@ export function DepositProvider({ children }: { children: ReactNode }) {
   const store = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
   const ready = useSyncExternalStore(subscribeNoop, () => true, () => false);
 
+  const applyRemoteStore = useCallback((remote: DepositStore | null) => {
+    if (!remote) return;
+    const normalized = normalizeStore(remote);
+    if (isExcelExpired(normalized.syncedAt)) {
+      clearUploadedExcelData();
+      return;
+    }
+    persistLocal(normalized);
+  }, []);
+
+  const refreshFromServer = useCallback(async () => {
+    const remote = await fetchSharedDepositStore();
+    applyRemoteStore(remote);
+    return remote;
+  }, [applyRemoteStore]);
+
+  useEffect(() => {
+    void refreshFromServer();
+    const timer = window.setInterval(() => {
+      void refreshFromServer();
+    }, SYNC_POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [refreshFromServer]);
+
   useEffect(() => {
     if (!store.syncedAt || isExcelExpired(store.syncedAt)) return;
     const remaining = msUntilExcelClear(store.syncedAt);
     if (remaining === null || remaining <= 0) {
       clearUploadedExcelData();
+      void refreshFromServer();
       return;
     }
-    const timer = window.setTimeout(() => clearUploadedExcelData(), remaining);
+    const timer = window.setTimeout(() => {
+      clearUploadedExcelData();
+      void refreshFromServer();
+    }, remaining);
     return () => window.clearTimeout(timer);
-  }, [store.syncedAt]);
+  }, [store.syncedAt, refreshFromServer]);
 
   const visibleStore = useMemo<DepositStore>(() => {
     if (isAdmin(viewer)) return store;
@@ -155,47 +189,65 @@ export function DepositProvider({ children }: { children: ReactNode }) {
     };
   }, [store, viewer]);
 
-  const replaceStore = useCallback((next: DepositStore) => {
-    if (!isAdmin(viewer)) return;
-    persist(normalizeStore(next));
-  }, [viewer]);
+  const replaceStore = useCallback(
+    async (next: DepositStore) => {
+      if (!isAdmin(viewer)) return;
+      const normalized = normalizeStore(next);
+      const remote = await pushSharedDepositStore({
+        activeItems: normalized.activeItems,
+        historyItems: normalized.historyItems,
+        syncedAt: normalized.syncedAt,
+      });
+      persistLocal(remote ? normalizeStore(remote) : normalized);
+    },
+    [viewer],
+  );
 
-  const clearStore = useCallback(() => {
+  const clearStore = useCallback(async () => {
     if (!isAdmin(viewer)) return;
+    await clearSharedDepositStore();
     clearUploadedExcelData();
   }, [viewer]);
 
-  const upsertRecord = useCallback((record: DepositItem & { isCurrent: boolean; id?: string }) => {
-    if (!isAdmin(viewer)) return;
-    const prev = getClientSnapshot();
-    const ownerName = record.ownerName;
-    const id =
-      record.id ||
-      `${record.isCurrent ? "active" : "history"}-${Date.now()}-${ownerName}-${record.bank}`;
-    const item: DepositItem = { ...record, id, ownerName };
-    if (!canViewOwner(viewer, ownerName)) return;
-    persist({
-      syncedAt: prev.syncedAt,
-      activeItems: record.isCurrent
-        ? [...prev.activeItems.filter((r) => r.id !== id), item]
-        : prev.activeItems,
-      historyItems: !record.isCurrent
-        ? [...prev.historyItems.filter((r) => r.id !== id), item]
-        : prev.historyItems,
-    });
-  }, [viewer]);
+  const upsertRecord = useCallback(
+    async (record: DepositItem & { isCurrent: boolean; id?: string }) => {
+      if (!isAdmin(viewer)) return;
+      const prev = getClientSnapshot();
+      const ownerName = record.ownerName;
+      const id =
+        record.id ||
+        `${record.isCurrent ? "active" : "history"}-${Date.now()}-${ownerName}-${record.bank}`;
+      const item: DepositItem = { ...record, id, ownerName };
+      if (!canViewOwner(viewer, ownerName)) return;
+      const next = normalizeStore({
+        syncedAt: prev.syncedAt,
+        activeItems: record.isCurrent
+          ? [...prev.activeItems.filter((r) => r.id !== id), item]
+          : prev.activeItems,
+        historyItems: !record.isCurrent
+          ? [...prev.historyItems.filter((r) => r.id !== id), item]
+          : prev.historyItems,
+      });
+      await replaceStore(next);
+    },
+    [viewer, replaceStore],
+  );
 
-  const deleteRecord = useCallback((id: string) => {
-    if (!isAdmin(viewer)) return;
-    const prev = getClientSnapshot();
-    const target = [...prev.activeItems, ...prev.historyItems].find((r) => r.id === id);
-    if (!target || !canViewOwner(viewer, target.ownerName)) return;
-    persist({
-      syncedAt: prev.syncedAt,
-      activeItems: prev.activeItems.filter((r) => r.id !== id),
-      historyItems: prev.historyItems.filter((r) => r.id !== id),
-    });
-  }, [viewer]);
+  const deleteRecord = useCallback(
+    async (id: string) => {
+      if (!isAdmin(viewer)) return;
+      const prev = getClientSnapshot();
+      const target = [...prev.activeItems, ...prev.historyItems].find((r) => r.id === id);
+      if (!target || !canViewOwner(viewer, target.ownerName)) return;
+      const next = normalizeStore({
+        syncedAt: prev.syncedAt,
+        activeItems: prev.activeItems.filter((r) => r.id !== id),
+        historyItems: prev.historyItems.filter((r) => r.id !== id),
+      });
+      await replaceStore(next);
+    },
+    [viewer, replaceStore],
+  );
 
   const activeRecords = useMemo(
     () => visibleStore.activeItems.map((item, i) => toRecord(item, `active-${i}`)),

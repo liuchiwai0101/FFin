@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import * as xlsx from "xlsx";
-import { saveDepositStore } from "@/lib/deposit-store";
+import { replaceDepositStore } from "@/lib/deposit-store";
 import { parseWorkbook, type DepositItem } from "@/lib/excel-parse";
 
 export type { DepositItem } from "@/lib/excel-parse";
@@ -31,7 +31,11 @@ export function parseExcelFile(filePath?: string) {
 }
 
 export function syncItemsToStore(items: { activeItems: DepositItem[]; historyItems: DepositItem[] }) {
-  const saved = saveDepositStore(items);
+  const saved = replaceDepositStore({
+    syncedAt: null,
+    activeItems: items.activeItems,
+    historyItems: items.historyItems,
+  });
   return {
     count: saved.activeItems.length + saved.historyItems.length,
     activeCount: saved.activeItems.length,

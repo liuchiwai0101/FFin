@@ -40,7 +40,7 @@ export default function SyncPageClient() {
           activeItems: parsed.activeItems,
           historyItems: parsed.historyItems,
         };
-        replaceStore(payload);
+        await replaceStore(payload);
         setMessage(
           t("sync.loaded", {
             active: payload.activeItems.length,
@@ -71,7 +71,7 @@ export default function SyncPageClient() {
           ...imported,
           syncedAt: new Date().toISOString(),
         };
-        replaceStore(payload);
+        await replaceStore(payload);
         setMessage(
           t("sync.imported", {
             active: payload.activeItems.length,

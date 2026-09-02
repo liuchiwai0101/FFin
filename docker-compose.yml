@@ -2,5 +2,13 @@ services:
   web:
     build: .
     ports:
-      - "3000:80"
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    volumes:
+      - ffin-data:/app/data
     restart: unless-stopped
+
+volumes:
+  ffin-data:
