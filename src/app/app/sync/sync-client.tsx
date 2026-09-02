@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState, useSyncExternalStore, useTransition } from "react";
 import { useDepositData } from "@/components/deposit-provider";
+import { LoginLogTable } from "@/components/login-log-table";
 import { useLocale } from "@/lib/i18n/locale-provider";
 import {
+  LOGIN_LOG_PREVIEW_LIMIT,
+  previewLoginLog,
   readLoginLog,
   subscribeLoginLog,
 } from "@/lib/login-log";
@@ -343,47 +346,39 @@ export default function SyncPageClient() {
       <div className="card p-6 shadow-sm border-slate-200">
         <h2 className="text-base font-bold text-slate-900">{t("sync.loginLogTitle")}</h2>
         <p className="text-xs text-slate-500 mt-1">{t("sync.loginLogDesc")}</p>
-        {loginLog.length > 0 && (
-          <p className="text-[11px] font-semibold text-teal-800 mt-2">
-            {t("sync.loginLogCount", { count: loginLog.length })}
-          </p>
-        )}
-        <div className="mt-4">
         {loginLog.length === 0 ? (
           <p className="text-xs text-slate-500">{t("sync.loginLogEmpty")}</p>
         ) : (
-          <div className="overflow-x-auto max-h-80 overflow-y-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
-                  <th className="py-2 pr-3 font-bold">{t("sync.loginLogWhen")}</th>
-                  <th className="py-2 pr-3 font-bold">{t("sync.loginLogAccount")}</th>
-                  <th className="py-2 pr-3 font-bold">{t("sync.loginLogRole")}</th>
-                  <th className="py-2 font-bold">{t("sync.loginLogDevice")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loginLog.map((entry) => (
-                  <tr key={`${entry.loggedAt}-${entry.userId}-${entry.accountEntered}`} className="border-b border-slate-100">
-                    <td className="py-2 pr-3 whitespace-nowrap text-slate-700">
-                      {new Date(entry.loggedAt).toLocaleString()}
-                    </td>
-                    <td className="py-2 pr-3 text-slate-900 font-semibold">
-                      {entry.name} ({entry.accountEntered})
-                    </td>
-                    <td className="py-2 pr-3 text-slate-600">
-                      {entry.role === "ADMIN" ? t("common.admin") : t("sync.loginLogMember")}
-                    </td>
-                    <td className="py-2 text-slate-600">
-                      {entry.timezone} · {entry.language}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <p className="text-[11px] font-semibold text-teal-800 mt-2">
+              {t("sync.loginLogPreviewNote", {
+                count: Math.min(loginLog.length, LOGIN_LOG_PREVIEW_LIMIT),
+                total: loginLog.length,
+              })}
+            </p>
+            <div className="mt-4">
+              <LoginLogTable
+                entries={previewLoginLog(loginLog)}
+                formatTime={(iso) => new Date(iso).toLocaleString()}
+                labels={{
+                  when: t("sync.loginLogWhen"),
+                  account: t("sync.loginLogAccount"),
+                  role: t("sync.loginLogRole"),
+                  device: t("sync.loginLogDevice"),
+                  admin: t("common.admin"),
+                  member: t("sync.loginLogMember"),
+                }}
+                compact
+              />
+            </div>
+            <Link
+              href="/app/login-log"
+              className="mt-4 inline-flex text-xs font-semibold text-teal-700 hover:underline"
+            >
+              {t("sync.loginLogViewAll")}
+            </Link>
+          </>
         )}
-        </div>
       </div>
 
       <p className="text-center text-xs text-slate-400">
