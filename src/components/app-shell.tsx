@@ -49,8 +49,10 @@ function AppChrome({ children }: { children: React.ReactNode }) {
   const user = useViewer();
   return (
     <DepositProvider>
-      <AppNav user={user} />
-      {children}
+      <div className="app-shell">
+        <AppNav user={user} />
+        <main className="app-main">{children}</main>
+      </div>
     </DepositProvider>
   );
 }

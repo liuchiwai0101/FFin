@@ -231,8 +231,8 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
         <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
           {t("overview.detailedBreakdown")}
         </h3>
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
-          <table className="w-full min-w-[640px] text-[10px]">
+        <div className="projection-table-wrap">
+          <table className="projection-table">
             <thead>
               <tr className="bg-slate-50 text-left text-[9px] font-bold uppercase tracking-wide text-slate-500">
                 <th className="px-2 py-1.5">{t("overview.yearCol")}</th>

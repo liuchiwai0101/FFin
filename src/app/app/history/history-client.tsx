@@ -195,6 +195,7 @@ export default function HistoryPage() {
       <section className="card overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <SortableTable
+            className="data-table"
             defaultSortKey="fromDate"
             defaultSortDir="asc"
             columns={[

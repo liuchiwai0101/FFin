@@ -150,13 +150,28 @@ export default function OverviewPage() {
     productTotals[group].interest += r.interest || 0;
   });
 
+  const memberCols = users.filter((u) => users.length === 1 || (userTotals[u] || 0) > 0);
+  const showMemberColumns = memberCols.length > 1;
+  const interestBanks = (["BOC", "HS", "SC", "HSBC", "ICBC"] as const).filter(
+    (b) => (bankInterestTotals[b] || 0) > 0,
+  );
+  const productEntries = Object.entries(productTotals).sort((a, b) => b[1].amount - a[1].amount);
+
+  function interestBankLabel(code: string) {
+    if (code === "SC") return "SC (渣打)";
+    if (code === "HS") return "HS (恒生)";
+    if (code === "HSBC") return "HSBC (匯豐)";
+    if (code === "ICBC") return "ICBC (工銀)";
+    return "BOC (中銀)";
+  }
+
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-5 sm:space-y-6">
       {/* Page Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-teal-700">{t("overview.eyebrow")}</span>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+          <h1 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
             {t("overview.title")}
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-500">{t("overview.subtitle")}</p>
@@ -174,7 +189,7 @@ export default function OverviewPage() {
       </div>
 
       {/* Top Level KPI Cards */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
+      <section className="kpi-grid">
         {/* Card 1: Total Principal */}
         <div className="card bg-gradient-to-br from-white to-teal-50/40 border-teal-100/80 p-4 shadow-sm">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiTotalPrincipal")}</p>
@@ -222,12 +237,41 @@ export default function OverviewPage() {
             {t("overview.total")}: {formatAmount(totalPrincipal, "HKD")}
           </span>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
+        <div className={users.length === 1 ? "" : "fit-card-grid"}>
           {users.map((u) => {
             const userAmount = userTotals[u] || 0;
             const pct = totalPrincipal > 0 ? (userAmount / totalPrincipal) * 100 : 0;
             const currentInterest = userCurrentInterest[u] || 0;
             const historyInterest = userHistoryInterest[u] || 0;
+            if (users.length === 1) {
+              return (
+                <div key={u} className="card user-summary-card border-slate-200 shadow-sm">
+                  <div className="user-summary-identity">
+                    <span className="h-8 w-8 rounded-full bg-teal-100 text-teal-800 font-black text-xs flex items-center justify-center">
+                      {u.slice(0, 2)}
+                    </span>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900">{u}</h3>
+                      <span className="badge text-[10px] font-bold">{t("overview.share", { pct: pct.toFixed(1) })}</span>
+                    </div>
+                  </div>
+                  <div className="user-summary-metrics">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiTotalPrincipal")}</p>
+                      <p className="user-stat-value mt-0.5 text-slate-950 font-mono">{formatAmount(userAmount, "HKD")}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.interestCurrent")}</p>
+                      <p className="user-stat-value mt-0.5 text-emerald-700 font-mono">+{formatAmount(currentInterest, "HKD")}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.interestHistory")}</p>
+                      <p className="user-stat-value mt-0.5 text-blue-700 font-mono">+{formatAmount(historyInterest, "HKD")}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div
                 key={u}
@@ -269,7 +313,7 @@ export default function OverviewPage() {
       <section className="card shadow-sm overflow-hidden">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">{t("overview.bankMatrixTitle")}</h2>
+            <h2 className="text-base font-bold text-slate-900">{t("overview.bankMatrixTitle")}</h2>
             <p className="text-xs text-slate-500">{t("overview.bankMatrixDesc")}</p>
           </div>
           <Link className="text-xs font-semibold text-teal-700 hover:underline" href="/app/current">
@@ -277,16 +321,20 @@ export default function OverviewPage() {
           </Link>
         </div>
 
-        <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0">
+        <div className="overflow-x-auto">
           <SortableTable
             defaultSortKey="total"
             defaultSortDir="desc"
             columns={[
-              { key: "bank", label: t("overview.bank"), className: "w-36" },
-              { key: "MA", label: "MA", className: "text-right", type: "number" },
-              { key: "Vin", label: "Vin", className: "text-right", type: "number" },
-              { key: "Miki", label: "Miki", className: "text-right", type: "number" },
-              { key: "BABA", label: "BABA", className: "text-right", type: "number" },
+              { key: "bank", label: t("overview.bank"), className: "w-40" },
+              ...(showMemberColumns
+                ? memberCols.map((u) => ({
+                    key: u,
+                    label: u,
+                    className: "text-right",
+                    type: "number" as const,
+                  }))
+                : []),
               {
                 key: "total",
                 label: t("overview.totalPrincipal"),
@@ -307,10 +355,7 @@ export default function OverviewPage() {
                 id: b,
                 values: {
                   bank: b,
-                  MA: row.MA,
-                  Vin: row.Vin,
-                  Miki: row.Miki,
-                  BABA: row.BABA,
+                  ...Object.fromEntries(memberCols.map((u) => [u, row[u] || 0])),
                   total: row.total,
                   pct,
                 },
@@ -319,22 +364,15 @@ export default function OverviewPage() {
                     <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 text-xs font-black mr-2 font-mono">
                       {b}
                     </span>
-                    <span className="text-xs text-slate-700">
-                      {bankLabel(b)}
-                    </span>
+                    <span className="text-xs text-slate-700">{bankLabel(b)}</span>
                   </td>,
-                  <td key="MA" className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                    {row.MA > 0 ? formatAmount(row.MA, "HKD") : "—"}
-                  </td>,
-                  <td key="Vin" className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                    {row.Vin > 0 ? formatAmount(row.Vin, "HKD") : "—"}
-                  </td>,
-                  <td key="Miki" className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                    {row.Miki > 0 ? formatAmount(row.Miki, "HKD") : "—"}
-                  </td>,
-                  <td key="BABA" className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                    {row.BABA > 0 ? formatAmount(row.BABA, "HKD") : "—"}
-                  </td>,
+                  ...(showMemberColumns
+                    ? memberCols.map((u) => (
+                        <td key={u} className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
+                          {(row[u] || 0) > 0 ? formatAmount(row[u], "HKD") : "—"}
+                        </td>
+                      ))
+                    : []),
                   <td key="total" className="text-right font-bold text-slate-950 font-mono text-xs bg-slate-50 whitespace-nowrap">
                     {formatAmount(row.total, "HKD")}
                   </td>,
@@ -349,10 +387,12 @@ export default function OverviewPage() {
             footer={
               <tr className="bg-slate-100 font-black text-slate-950 border-t-2 border-slate-300">
                 <td>{t("overview.grandTotal")}</td>
-                <td className="text-right font-mono text-xs whitespace-nowrap">{formatAmount(userTotals.MA, "HKD")}</td>
-                <td className="text-right font-mono text-xs whitespace-nowrap">{formatAmount(userTotals.Vin, "HKD")}</td>
-                <td className="text-right font-mono text-xs whitespace-nowrap">{formatAmount(userTotals.Miki, "HKD")}</td>
-                <td className="text-right font-mono text-xs whitespace-nowrap">{formatAmount(userTotals.BABA, "HKD")}</td>
+                {showMemberColumns &&
+                  memberCols.map((u) => (
+                    <td key={u} className="text-right font-mono text-xs whitespace-nowrap">
+                      {formatAmount(userTotals[u] || 0, "HKD")}
+                    </td>
+                  ))}
                 <td className="text-right font-mono text-xs bg-teal-50 text-teal-950 whitespace-nowrap">
                   {formatAmount(totalPrincipal, "HKD")}
                 </td>
@@ -367,7 +407,7 @@ export default function OverviewPage() {
       <section className="card shadow-sm overflow-hidden">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">{t("overview.interestMatrixTitle")}</h2>
+            <h2 className="text-base font-bold text-slate-900">{t("overview.interestMatrixTitle")}</h2>
             <p className="text-xs text-slate-500">{t("overview.interestMatrixDesc")}</p>
           </div>
           <Link className="text-xs font-semibold text-teal-700 hover:underline" href="/app/history">
@@ -375,17 +415,18 @@ export default function OverviewPage() {
           </Link>
         </div>
 
-        <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0">
+        <div className="overflow-x-auto">
           <SortableTable
             defaultSortKey="total"
             defaultSortDir="desc"
             columns={[
               { key: "member", label: t("overview.member"), className: "w-28" },
-              { key: "BOC", label: "BOC (中銀)", className: "text-right", type: "number" },
-              { key: "HS", label: "HS (恒生)", className: "text-right", type: "number" },
-              { key: "SC", label: "SC (渣打)", className: "text-right", type: "number" },
-              { key: "HSBC", label: "HSBC (匯豐)", className: "text-right", type: "number" },
-              { key: "ICBC", label: "ICBC (工銀)", className: "text-right", type: "number" },
+              ...interestBanks.map((b) => ({
+                key: b,
+                label: interestBankLabel(b),
+                className: "text-right",
+                type: "number" as const,
+              })),
               {
                 key: "total",
                 label: t("overview.totalInterest"),
@@ -399,11 +440,7 @@ export default function OverviewPage() {
                 id: u,
                 values: {
                   member: u,
-                  BOC: row.BOC,
-                  HS: row.HS,
-                  SC: row.SC,
-                  HSBC: row.HSBC,
-                  ICBC: row.ICBC,
+                  ...Object.fromEntries(interestBanks.map((b) => [b, row[b] || 0])),
                   total: row.total,
                 },
                 cells: [
@@ -415,21 +452,11 @@ export default function OverviewPage() {
                       {u}
                     </span>
                   </td>,
-                  <td key="BOC" className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                    {row.BOC > 0 ? `+${formatAmount(row.BOC, "HKD")}` : "—"}
-                  </td>,
-                  <td key="HS" className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                    {row.HS > 0 ? `+${formatAmount(row.HS, "HKD")}` : "—"}
-                  </td>,
-                  <td key="SC" className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                    {row.SC > 0 ? `+${formatAmount(row.SC, "HKD")}` : "—"}
-                  </td>,
-                  <td key="HSBC" className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                    {row.HSBC > 0 ? `+${formatAmount(row.HSBC, "HKD")}` : "—"}
-                  </td>,
-                  <td key="ICBC" className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                    {row.ICBC > 0 ? `+${formatAmount(row.ICBC, "HKD")}` : "—"}
-                  </td>,
+                  ...interestBanks.map((b) => (
+                    <td key={b} className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
+                      {(row[b] || 0) > 0 ? `+${formatAmount(row[b], "HKD")}` : "—"}
+                    </td>
+                  )),
                   <td key="total" className="text-right font-bold text-emerald-700 font-mono text-xs bg-emerald-50/30 whitespace-nowrap">
                     +{formatAmount(row.total, "HKD")}
                   </td>,
@@ -439,11 +466,11 @@ export default function OverviewPage() {
             footer={
               <tr className="bg-slate-100 font-black text-slate-950 border-t-2 border-slate-300">
                 <td>{t("overview.grandTotal")}</td>
-                <td className="text-right font-mono text-xs whitespace-nowrap">+{formatAmount(bankInterestTotals.BOC, "HKD")}</td>
-                <td className="text-right font-mono text-xs whitespace-nowrap">+{formatAmount(bankInterestTotals.HS, "HKD")}</td>
-                <td className="text-right font-mono text-xs whitespace-nowrap">+{formatAmount(bankInterestTotals.SC, "HKD")}</td>
-                <td className="text-right font-mono text-xs whitespace-nowrap">+{formatAmount(bankInterestTotals.HSBC, "HKD")}</td>
-                <td className="text-right font-mono text-xs whitespace-nowrap">+{formatAmount(bankInterestTotals.ICBC, "HKD")}</td>
+                {interestBanks.map((b) => (
+                  <td key={b} className="text-right font-mono text-xs whitespace-nowrap">
+                    +{formatAmount(bankInterestTotals[b] || 0, "HKD")}
+                  </td>
+                ))}
                 <td className="text-right font-mono text-xs bg-emerald-100 text-emerald-950 whitespace-nowrap">
                   +{formatAmount(bankInterestTotals.total, "HKD")}
                 </td>
@@ -456,16 +483,16 @@ export default function OverviewPage() {
       {/* Product Type Breakdown */}
       <section className="card shadow-sm">
         <div className="mb-4">
-          <h2 className="text-base sm:text-lg font-bold text-slate-900">{t("overview.productTypesTitle")}</h2>
+          <h2 className="text-base font-bold text-slate-900">{t("overview.productTypesTitle")}</h2>
           <p className="text-xs text-slate-500">{t("overview.productTypesDesc")}</p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {Object.entries(productTotals).map(([name, data]) => {
+        <div className="fit-card-grid">
+          {productEntries.map(([name, data]) => {
             const pct = totalPrincipal > 0 ? (data.amount / totalPrincipal) * 100 : 0;
             return (
               <div key={name} className="border border-slate-200/80 rounded-lg p-3.5 bg-slate-50/50 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between text-xs mb-1">
+                  <div className="flex items-center justify-between text-xs mb-1 gap-2">
                     <span className="font-bold text-slate-900 truncate">{name}</span>
                     <span className="badge text-[10px] font-mono font-bold">{pct.toFixed(1)}%</span>
                   </div>
