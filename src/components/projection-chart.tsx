@@ -9,6 +9,11 @@ type ProjectionChartProps = {
   targetLabel: string;
 };
 
+const CHART_WIDTH = 1080;
+const CHART_HEIGHT = 148;
+const LABEL_FONT =
+  'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+
 function formatAxis(value: number): string {
   if (value >= 1_000_000) return `HK$${(value / 1_000_000).toFixed(1)}M`;
   return `HK$${Math.round(value / 1_000)}k`;
@@ -28,14 +33,12 @@ export function ProjectionChart({
   conservativeLabel,
   targetLabel,
 }: ProjectionChartProps) {
-  const width = 720;
-  const height = 168;
-  const padLeft = 16;
-  const padRight = 56;
+  const padLeft = 12;
+  const padRight = 58;
   const padTop = 8;
   const padBottom = 22;
-  const plotW = width - padLeft - padRight;
-  const plotH = height - padTop - padBottom;
+  const plotW = CHART_WIDTH - padLeft - padRight;
+  const plotH = CHART_HEIGHT - padTop - padBottom;
 
   const conservativeSeries = [baseCapital, ...rows.map((r) => r.cBase)];
   const targetSeries = [baseCapital, ...rows.map((r) => r.tBase)];
@@ -60,8 +63,8 @@ export function ProjectionChart({
   const yTicks = Array.from({ length: ticks }, (_, i) => min + ((max - min) * i) / (ticks - 1));
 
   return (
-    <div className="rounded-lg border border-slate-200/80 bg-white px-2 py-1.5">
-      <div className="flex items-center justify-center gap-4 mb-1 text-[10px] font-semibold text-slate-600">
+    <div className="rounded-lg border border-slate-200/80 bg-white px-1 py-1.5">
+      <div className="mb-1 flex items-center justify-center gap-4 text-[10px] font-semibold text-slate-600">
         <span className="inline-flex items-center gap-1.5">
           <span className="w-6 border-t border-dashed border-teal-400" />
           {conservativeLabel}
@@ -73,8 +76,10 @@ export function ProjectionChart({
       </div>
 
       <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="w-full h-auto max-h-[140px]"
+        viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+        className="block h-[148px] w-full"
+        preserveAspectRatio="xMidYMid meet"
+        textRendering="optimizeLegibility"
         role="img"
         aria-label="Compound growth projection chart"
       >
@@ -85,17 +90,19 @@ export function ProjectionChart({
               <line
                 x1={padLeft}
                 y1={y}
-                x2={width - padRight}
+                x2={CHART_WIDTH - padRight}
                 y2={y}
                 stroke="#e2e8f0"
                 strokeWidth="1"
               />
               <text
-                x={width - padRight + 4}
-                y={y + 3}
-                fill="#94a3b8"
-                fontSize="9"
-                fontFamily="ui-monospace, monospace"
+                x={CHART_WIDTH - 6}
+                y={y + 4}
+                textAnchor="end"
+                fill="#64748b"
+                fontSize="11"
+                fontWeight="600"
+                fontFamily={LABEL_FONT}
               >
                 {formatAxis(tick)}
               </text>
@@ -131,13 +138,14 @@ export function ProjectionChart({
           <text
             key={i}
             x={xAt(i + 1)}
-            y={height - 6}
+            y={CHART_HEIGHT - 6}
             textAnchor="middle"
-            fill="#94a3b8"
-            fontSize="9"
+            fill="#64748b"
+            fontSize="11"
             fontWeight="600"
+            fontFamily={LABEL_FONT}
           >
-            Y{i + 1}
+            Year {i + 1}
           </text>
         ))}
       </svg>

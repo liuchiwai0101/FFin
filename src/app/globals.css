@@ -3,6 +3,7 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  --app-max-width: 72rem;
 }
 
 @theme inline {
@@ -27,6 +28,7 @@ body {
   min-height: 100vh;
   width: 100%;
   background-color: #f8fafc;
+  overflow-x: clip;
 }
 
 .app-topbar {
@@ -41,14 +43,54 @@ body {
 
 .app-topbar-container {
   margin: 0 auto;
-  max-width: 90rem;
-  padding: 0.75rem 1.5rem;
+  max-width: var(--app-max-width, 72rem);
+  padding: 0.6rem 1.25rem 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  box-sizing: border-box;
+}
+
+.app-topbar-primary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.app-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.app-topbar-meta {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(28rem, 100%);
+}
+
+.app-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.app-topbar-nav {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  box-sizing: border-box;
+  gap: 0.15rem;
+  margin-left: -0.45rem;
 }
 
 .top-nav-item {
@@ -83,22 +125,58 @@ body {
 .app-main {
   flex: 1 1 0%;
   width: 100%;
-  max-width: 90rem;
+  max-width: var(--app-max-width, 72rem);
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 1.15rem 1.25rem 2.5rem;
   background-color: #f8fafc;
   box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
   .app-main {
-    padding: 2rem 1.5rem;
+    padding: 1.35rem 1.5rem 2.75rem;
   }
 }
 
 @media (min-width: 1024px) {
   .app-main {
-    padding: 2.25rem 2rem;
+    padding: 1.5rem 1.5rem 3rem;
+  }
+}
+
+.kpi-grid,
+.fit-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.user-summary-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.75rem;
+}
+
+.user-summary-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 10rem;
+}
+
+.user-summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(7.5rem, 1fr));
+  gap: 0.75rem 1.25rem;
+  flex: 1 1 18rem;
+}
+
+@media (max-width: 640px) {
+  .user-summary-metrics {
+    grid-template-columns: 1fr;
+    width: 100%;
   }
 }
 
@@ -169,13 +247,49 @@ label {
 
 table {
   width: 100%;
-  min-width: 600px;
-  font-size: 0.875rem;
+  min-width: 0;
+  font-size: 0.8125rem;
   border-collapse: collapse;
 }
 
+.data-table {
+  min-width: 40rem;
+}
+
+.projection-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+}
+
+.projection-table {
+  width: 100%;
+  min-width: 42rem;
+  font-size: 0.6875rem;
+}
+
+.projection-table th,
+.projection-table td {
+  padding: 0.35rem 0.5rem;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.projection-table th {
+  font-size: 0.5625rem;
+  letter-spacing: 0.04em;
+}
+
+.projection-table input {
+  width: 3.5rem;
+  margin-top: 0;
+  padding: 0.15rem 0.25rem;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+}
+
 th {
-  padding: 0.75rem 0.85rem;
+  padding: 0.6rem 0.7rem;
   text-align: left;
   color: #64748b;
   font-weight: 600;
@@ -214,7 +328,7 @@ th {
 }
 
 td {
-  padding: 0.8rem 0.85rem;
+  padding: 0.6rem 0.7rem;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -263,7 +377,7 @@ td {
 
 .page {
   margin: 0 auto;
-  max-width: 90rem;
+  max-width: var(--app-max-width, 72rem);
   width: 100%;
 }
 

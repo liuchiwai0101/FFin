@@ -173,6 +173,7 @@ export default function CurrentProductsPage() {
       <section className="card overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <SortableTable
+            className="data-table"
             defaultSortKey="ownerName"
             columns={[
               { key: "ownerName", label: t("current.colMember") },
