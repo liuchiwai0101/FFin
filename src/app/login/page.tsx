@@ -26,7 +26,7 @@ function LoginForm() {
       setError(true);
       return;
     }
-    writeSessionUser(user);
+    writeSessionUser(user, { accountEntered: String(form.get("email") ?? "") });
     router.replace(next.startsWith("/") ? next : "/app");
   }
 

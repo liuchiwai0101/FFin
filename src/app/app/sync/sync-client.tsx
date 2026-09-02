@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState, useSyncExternalStore, useTransition } from "react";
 import { useDepositData } from "@/components/deposit-provider";
 import { useLocale } from "@/lib/i18n/locale-provider";
+import {
+  clearAdminLoginLog,
+  readAdminLoginLog,
+  subscribeAdminLoginLog,
+} from "@/lib/admin-login-log";
 import { downloadDepositBackup, parseDepositBackup } from "@/lib/deposit-backup";
 import { excelClearAt } from "@/lib/excel-retention";
 import { parseExcelArrayBuffer } from "@/lib/excel-parse";
@@ -25,6 +30,7 @@ export default function SyncPageClient() {
   const [pending, startTransition] = useTransition();
   const [tokenInput, setTokenInput] = useState("");
   const tokenReady = useSyncExternalStore(subscribeGitHubSyncToken, hasGitHubSyncToken, () => false);
+  const adminLoginLog = useSyncExternalStore(subscribeAdminLoginLog, readAdminLoginLog, () => []);
 
   function onSaveToken(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -328,6 +334,53 @@ export default function SyncPageClient() {
             </button>
           </form>
         </div>
+      </div>
+
+      <div className="card p-6 shadow-sm border-slate-200">
+        <h2 className="text-base font-bold text-slate-900">{t("sync.adminLoginLogTitle")}</h2>
+        <p className="text-xs text-slate-500 mt-1 mb-4">{t("sync.adminLoginLogDesc")}</p>
+        {adminLoginLog.length === 0 ? (
+          <p className="text-xs text-slate-500">{t("sync.adminLoginLogEmpty")}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
+                  <th className="py-2 pr-3 font-bold">{t("sync.adminLoginLogWhen")}</th>
+                  <th className="py-2 pr-3 font-bold">{t("sync.adminLoginLogAccount")}</th>
+                  <th className="py-2 font-bold">{t("sync.adminLoginLogDevice")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminLoginLog.map((entry) => (
+                  <tr key={`${entry.loggedAt}-${entry.accountEntered}`} className="border-b border-slate-100">
+                    <td className="py-2 pr-3 whitespace-nowrap text-slate-700">
+                      {new Date(entry.loggedAt).toLocaleString()}
+                    </td>
+                    <td className="py-2 pr-3 text-slate-900 font-semibold">
+                      {entry.name} ({entry.accountEntered})
+                    </td>
+                    <td className="py-2 text-slate-600">
+                      {entry.timezone} · {entry.language}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {adminLoginLog.length > 0 && (
+          <button
+            type="button"
+            className="mt-4 text-xs font-semibold text-rose-600 hover:underline"
+            onClick={() => {
+              clearAdminLoginLog();
+              setMessage(t("sync.adminLoginLogCleared"));
+            }}
+          >
+            {t("sync.adminLoginLogClear")}
+          </button>
+        )}
       </div>
 
       <p className="text-center text-xs text-slate-400">

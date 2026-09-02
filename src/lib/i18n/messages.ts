@@ -259,6 +259,14 @@ const en = {
     githubNotFound: "Could not find public/data/latest.json on main. Retry after the latest Pages deploy.",
     githubCorsError: "Browser blocked the GitHub API request. Try Chrome/Safari, or refresh and upload again.",
     githubSyncFailedDetail: "GitHub sync failed ({detail}).",
+    adminLoginLogTitle: "Admin login log",
+    adminLoginLogDesc: "Recent admin sign-ins on this device. Passwords are never stored.",
+    adminLoginLogEmpty: "No admin sign-ins recorded on this device yet.",
+    adminLoginLogClear: "Clear login log",
+    adminLoginLogCleared: "Admin login log cleared.",
+    adminLoginLogWhen: "Time",
+    adminLoginLogAccount: "Account",
+    adminLoginLogDevice: "Device",
   },
 } as const;
 
@@ -517,6 +525,14 @@ const zh = {
     githubNotFound: "找不到 main 分支的 public/data/latest.json，請等 Pages 部署完成後重試。",
     githubCorsError: "瀏覽器阻擋了 GitHub API 請求。請換 Chrome/Safari 或刷新後再試。",
     githubSyncFailedDetail: "GitHub 同步失敗（{detail}）。",
+    adminLoginLogTitle: "管理員登入紀錄",
+    adminLoginLogDesc: "此裝置上最近的管理員登入。密碼不會被儲存。",
+    adminLoginLogEmpty: "此裝置尚未記錄管理員登入。",
+    adminLoginLogClear: "清除登入紀錄",
+    adminLoginLogCleared: "已清除管理員登入紀錄。",
+    adminLoginLogWhen: "時間",
+    adminLoginLogAccount: "帳戶",
+    adminLoginLogDevice: "裝置",
   },
 };
 
