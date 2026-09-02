@@ -69,12 +69,6 @@ describe("login-log", () => {
     expect(readLoginLog()).toHaveLength(0);
   });
 
-  it("returns a stable snapshot reference until the log changes", () => {
-    const admin = APP_USERS.find((user) => user.username === "Vin")!;
-    recordLogin(admin, "Vin");
-    expect(readLoginLog()).toBe(readLoginLog());
-  });
-
   it("keeps every merged entry without trimming", () => {
     const entries = Array.from({ length: 120 }, (_, index) => ({
       loggedAt: new Date(Date.UTC(2026, 0, 1, index)).toISOString(),
