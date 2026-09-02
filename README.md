@@ -42,13 +42,13 @@ Vin’s Excel upload is converted to a **fixed JSON file** and written to GitHub
 - **Write:** admin upload uses the GitHub Contents API
 - **Expiry:** `expiresAt` is set to 48 hours after upload; a scheduled GitHub Action clears the file when expired
 
-### One-time setup
+### One-time setup (Vin only)
 
 1. Create a **fine-grained GitHub PAT** with **Contents: Read and write** on this repo (`gh-pages` branch).
-2. Add repo secret **`FFIN_GITHUB_TOKEN`** with that PAT.
-3. Merge to `main` — the Pages workflow bakes the token into the static build for admin uploads.
+2. Open **Sync Excel** on the site → paste the PAT in **GitHub upload token** → **Save token**.
+3. The token stays in **Vin’s browser only** (not in the repo or static build).
 
-> The token is embedded in the client bundle for admin writes. Use a PAT limited to this repo only, and rotate if needed.
+> Do **not** add the PAT to GitHub Secrets — GitHub blocks pushes that embed tokens in the static site bundle.
 
 ### JSON format (`data/latest.json`)
 

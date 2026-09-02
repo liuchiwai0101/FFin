@@ -2,13 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState, useTransition } from "react";
+import { type FormEvent, useState, useSyncExternalStore, useTransition } from "react";
 import { useDepositData } from "@/components/deposit-provider";
 import { useLocale } from "@/lib/i18n/locale-provider";
 import { downloadDepositBackup, parseDepositBackup } from "@/lib/deposit-backup";
 import { excelClearAt } from "@/lib/excel-retention";
 import { parseExcelArrayBuffer } from "@/lib/excel-parse";
-import { isGitHubSyncConfigured } from "@/lib/github-sync";
+import {
+  clearGitHubSyncToken,
+  hasGitHubSyncToken,
+  subscribeGitHubSyncToken,
+  writeGitHubSyncToken,
+} from "@/lib/github-token-storage";
 
 export default function SyncPageClient() {
   const router = useRouter();
@@ -17,6 +22,25 @@ export default function SyncPageClient() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
+  const [tokenInput, setTokenInput] = useState("");
+  const tokenReady = useSyncExternalStore(subscribeGitHubSyncToken, hasGitHubSyncToken, () => false);
+
+  function onSaveToken(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    if (!tokenInput.trim()) {
+      setError(t("sync.githubTokenMissing"));
+      return;
+    }
+    writeGitHubSyncToken(tokenInput);
+    setTokenInput("");
+    setMessage(t("sync.githubTokenSaved"));
+  }
+
+  function onClearToken() {
+    clearGitHubSyncToken();
+    setMessage(t("sync.githubTokenCleared"));
+  }
 
   const activeCount = store.activeItems.length;
   const historyCount = store.historyItems.length;
@@ -105,7 +129,7 @@ export default function SyncPageClient() {
         <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           {t("sync.deviceNote")}
         </p>
-        {!isGitHubSyncConfigured() && (
+        {!tokenReady && (
           <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
             {t("sync.githubTokenMissing")}
           </p>
@@ -123,6 +147,35 @@ export default function SyncPageClient() {
               </p>
             )}
           </>
+        )}
+      </div>
+
+      <div className="card p-6 shadow-sm border-slate-200">
+        <h2 className="text-base font-bold text-slate-900">{t("sync.githubTokenTitle")}</h2>
+        <p className="text-xs text-slate-500 mt-1 mb-4">{t("sync.githubTokenDesc")}</p>
+        {tokenReady ? (
+          <div className="space-y-2">
+            <p className="text-xs text-teal-800 bg-teal-50 border border-teal-100 rounded-lg px-3 py-2">
+              {t("sync.githubTokenReady")}
+            </p>
+            <button type="button" className="text-xs font-semibold text-rose-600 hover:underline" onClick={onClearToken}>
+              {t("sync.githubTokenRemove")}
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={onSaveToken} className="space-y-3">
+            <input
+              type="password"
+              value={tokenInput}
+              onChange={(event) => setTokenInput(event.target.value)}
+              placeholder={t("sync.githubTokenPlaceholder")}
+              autoComplete="off"
+              className="block w-full rounded-md border border-slate-300 px-3 py-2 text-xs"
+            />
+            <button className="button w-full text-xs font-bold py-2.5" type="submit">
+              {t("sync.githubTokenSave")}
+            </button>
+          </form>
         )}
       </div>
 

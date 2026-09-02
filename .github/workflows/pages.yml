@@ -33,7 +33,6 @@ jobs:
           NEXT_PUBLIC_GITHUB_REPO: ${{ github.repository }}
           NEXT_PUBLIC_GITHUB_BRANCH: gh-pages
           NEXT_PUBLIC_GITHUB_DATA_PATH: data/latest.json
-          NEXT_PUBLIC_GITHUB_SYNC_TOKEN: ${{ secrets.FFIN_GITHUB_TOKEN }}
       - name: Preserve shared deposit data from gh-pages
         run: |
           set -euo pipefail

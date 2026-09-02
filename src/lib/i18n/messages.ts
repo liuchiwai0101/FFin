@@ -242,8 +242,17 @@ const en = {
     importFailed: "Import failed. Choose a valid FFin backup file.",
     imported: "Imported {active} active and {history} history rows.",
     githubTokenMissing:
-      "GitHub upload token is not configured. Add repo secret FFIN_GITHUB_TOKEN and rebuild Pages.",
-    githubSyncFailed: "Could not write shared data to GitHub. Check FFIN_GITHUB_TOKEN permissions.",
+      "Paste your GitHub upload token below (Fine-grained PAT with Contents read/write on FFin).",
+    githubSyncFailed: "Could not write shared data to GitHub. Check your PAT permissions.",
+    githubTokenTitle: "GitHub upload token",
+    githubTokenDesc:
+      "Paste the Fine-grained PAT once on this device. It stays in this browser only and is never sent to our servers.",
+    githubTokenPlaceholder: "github_pat_…",
+    githubTokenSave: "Save token",
+    githubTokenSaved: "GitHub token saved on this device. You can upload Excel now.",
+    githubTokenReady: "GitHub token is saved on this device.",
+    githubTokenRemove: "Remove saved token",
+    githubTokenCleared: "GitHub token removed from this device.",
   },
 } as const;
 
@@ -485,8 +494,16 @@ const zh = {
     importing: "匯入中…",
     importFailed: "匯入失敗，請選擇有效的 FFin 備份檔。",
     imported: "已匯入 {active} 項現有及 {history} 項歷史紀錄。",
-    githubTokenMissing: "尚未設定 GitHub 上傳權杖。請在倉庫 Secrets 新增 FFIN_GITHUB_TOKEN 並重新部署 Pages。",
-    githubSyncFailed: "無法寫入 GitHub 共享數據，請檢查 FFIN_GITHUB_TOKEN 權限。",
+    githubTokenMissing: "請在下方貼上 GitHub 上傳權杖（Fine-grained PAT，FFin 倉庫 Contents 讀寫權限）。",
+    githubSyncFailed: "無法寫入 GitHub 共享數據，請檢查 PAT 權限是否正確。",
+    githubTokenTitle: "GitHub 上傳權杖",
+    githubTokenDesc: "在此裝置貼上 Fine-grained PAT 一次，僅保存在本瀏覽器，不會上傳到其他伺服器。",
+    githubTokenPlaceholder: "github_pat_…",
+    githubTokenSave: "保存權杖",
+    githubTokenSaved: "已保存 GitHub 權杖，現在可以上傳 Excel。",
+    githubTokenReady: "此裝置已保存 GitHub 權杖。",
+    githubTokenRemove: "移除已保存的權杖",
+    githubTokenCleared: "已從此裝置移除 GitHub 權杖。",
   },
 };
 

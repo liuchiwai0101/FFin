@@ -1,4 +1,5 @@
 import type { DepositStore } from "@/lib/deposit-types";
+import { readGitHubSyncToken } from "@/lib/github-token-storage";
 import {
   createEmptySharedPayload,
   createSharedPayload,
@@ -24,8 +25,7 @@ function githubDataPath(): string {
 }
 
 function githubToken(): string | null {
-  const token = process.env.NEXT_PUBLIC_GITHUB_SYNC_TOKEN;
-  return token && token.length > 0 ? token : null;
+  return readGitHubSyncToken();
 }
 
 export function sharedDataReadUrl(): string {
