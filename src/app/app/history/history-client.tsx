@@ -6,6 +6,11 @@ import { SortableTable } from "@/components/sortable-table";
 import { useDepositData } from "@/components/deposit-provider";
 import { useViewer } from "@/components/user-context";
 import { useLocale } from "@/lib/i18n/locale-provider";
+import {
+  matchesBankFilter,
+  uniqueBankFilters,
+  uniqueYearFilters,
+} from "@/lib/deposit-filters";
 import { endedYear } from "@/lib/finance";
 import { isAdmin } from "@/lib/users";
 
@@ -26,7 +31,7 @@ export default function HistoryPage() {
 
   const filtered = allRecords.filter((r) => {
     if (userFilter !== "All" && r.ownerName !== userFilter) return false;
-    if (bankFilter !== "All" && !r.bank.toUpperCase().includes(bankFilter.toUpperCase())) return false;
+    if (!matchesBankFilter(r.bank, bankFilter)) return false;
     if (yearFilter !== "All" && String(endedYear(r.toDate)) !== yearFilter) return false;
     if (searchFilter) {
       const matchProduct = r.product.toLowerCase().includes(searchFilter);
@@ -41,7 +46,7 @@ export default function HistoryPage() {
   const selectedUserTotal = activeRecords
     .filter((r) => {
       if (userFilter !== "All" && r.ownerName !== userFilter) return false;
-      if (bankFilter !== "All" && !r.bank.toUpperCase().includes(bankFilter.toUpperCase())) return false;
+      if (!matchesBankFilter(r.bank, bankFilter)) return false;
       return true;
     })
     .reduce((sum, r) => sum + r.amount, 0);
@@ -52,15 +57,9 @@ export default function HistoryPage() {
       : 0;
 
   const users = ["All", "MA", "Vin", "Miki", "BABA"];
-  const banks = ["All", "BOC", "HS", "SC", "HSBC", "ICBC"];
-  const yearsFromData = [
-    ...new Set(
-      allRecords
-        .map((r) => endedYear(r.toDate))
-        .filter((year): year is number => year !== null),
-    ),
-  ].sort((a, b) => b - a);
-  const years = ["All", ...yearsFromData.map(String)];
+  const banks = uniqueBankFilters(allRecords, userFilter);
+  const years = uniqueYearFilters(allRecords, userFilter);
+  if (bankFilter !== "All" && !banks.includes(bankFilter)) banks.splice(1, 0, bankFilter);
   if (yearFilter !== "All" && !years.includes(yearFilter)) years.splice(1, 0, yearFilter);
 
   const historyHref = (user: string, bank: string, year: string) => {

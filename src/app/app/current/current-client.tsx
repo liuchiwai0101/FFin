@@ -6,6 +6,12 @@ import { SortableTable } from "@/components/sortable-table";
 import { useDepositData } from "@/components/deposit-provider";
 import { useViewer } from "@/components/user-context";
 import { useLocale } from "@/lib/i18n/locale-provider";
+import {
+  matchesBankFilter,
+  matchesProductTypeFilter,
+  uniqueBankFilters,
+  uniqueProductTypeFilters,
+} from "@/lib/deposit-filters";
 import { isAdmin } from "@/lib/users";
 
 export default function CurrentProductsPage() {
@@ -27,13 +33,8 @@ export default function CurrentProductsPage() {
   // Filter records
   const filtered = allRecords.filter((r) => {
     if (userFilter !== "All" && r.ownerName !== userFilter) return false;
-    if (bankFilter !== "All" && !r.bank.toUpperCase().includes(bankFilter.toUpperCase())) return false;
-    if (typeFilter !== "All") {
-      if (typeFilter === "Bond" && !r.product.includes("Bond") && !r.product.includes("債券")) return false;
-      if (typeFilter === "TimeDeposit" && !r.product.includes("Time Deposit") && !r.product.includes("定存")) return false;
-      if (typeFilter === "Demand" && !r.product.includes("Demand") && !r.product.includes("Savings")) return false;
-      if (typeFilter === "RMB" && !r.product.includes("RMB")) return false;
-    }
+    if (!matchesBankFilter(r.bank, bankFilter)) return false;
+    if (!matchesProductTypeFilter(r.product, typeFilter)) return false;
     return true;
   });
 
@@ -41,15 +42,28 @@ export default function CurrentProductsPage() {
   const totalInterest = filtered.reduce((sum, r) => sum + (r.interest || 0), 0);
   const totalMaturity = filtered.reduce((sum, r) => sum + (r.totalAmount || r.amount), 0);
 
-  const users = ["All", "MA", "Vin", "Miki"];
-  const banks = ["All", "SC", "HS", "HSBC", "ICBC", "BOC"];
+  const users = ["All", "MA", "Vin", "Miki", "BABA"];
+  const banks = uniqueBankFilters(allRecords, userFilter);
+  const typeLabels: Record<string, string> = {
+    TimeDeposit: t("current.typeTimeDeposit"),
+    Bond: t("current.typeBond"),
+    RMB: t("current.typeRmb"),
+    Demand: t("current.typeDemand"),
+  };
   const types = [
     { id: "All", label: t("current.typeAll") },
-    { id: "TimeDeposit", label: t("current.typeTimeDeposit") },
-    { id: "Bond", label: t("current.typeBond") },
-    { id: "RMB", label: t("current.typeRmb") },
-    { id: "Demand", label: t("current.typeDemand") },
+    ...uniqueProductTypeFilters(allRecords, userFilter).map((id) => ({
+      id,
+      label: typeLabels[id],
+    })),
   ];
+  if (bankFilter !== "All" && !banks.includes(bankFilter)) banks.splice(1, 0, bankFilter);
+  if (typeFilter !== "All" && !types.some((type) => type.id === typeFilter)) {
+    types.push({
+      id: typeFilter,
+      label: typeLabels[typeFilter] ?? typeFilter,
+    });
+  }
 
   const currentHref = (user: string, bank: string, type: string) => {
     const query = new URLSearchParams({ user, bank, type });
