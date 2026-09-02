@@ -34,7 +34,7 @@ describe("shared-deposit-format", () => {
     expect(store.syncedAt).toBeTruthy();
   });
 
-  it("expires payload after 48 hours", () => {
+  it("expires payload after retention window", () => {
     const syncedAt = new Date(Date.now() - EXCEL_RETENTION_MS - 1000).toISOString();
     const expired = isSharedPayloadExpired({
       version: 1,

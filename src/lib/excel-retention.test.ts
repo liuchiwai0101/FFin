@@ -4,9 +4,9 @@ import { EXCEL_RETENTION_MS, excelClearAt, isExcelExpired, msUntilExcelClear } f
 describe("excel-retention", () => {
   const imported = "2026-09-01T10:00:00.000Z";
 
-  it("computes clear time 48 hours after import", () => {
+  it("computes clear time 6 hours after import", () => {
     const clearAt = excelClearAt(imported);
-    expect(clearAt?.toISOString()).toBe("2026-09-03T10:00:00.000Z");
+    expect(clearAt?.toISOString()).toBe("2026-09-01T16:00:00.000Z");
   });
 
   it("detects expired data", () => {

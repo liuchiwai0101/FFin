@@ -1,5 +1,5 @@
-/** Excel data is kept for 48 hours after import, then auto-cleared. */
-export const EXCEL_RETENTION_MS = 48 * 60 * 60 * 1000;
+/** Excel data is kept for 6 hours after import, then auto-cleared. */
+export const EXCEL_RETENTION_MS = 6 * 60 * 60 * 1000;
 
 export function excelClearAt(syncedAt: string | null | undefined): Date | null {
   if (!syncedAt) return null;

@@ -211,7 +211,15 @@ export function DepositProvider({ children }: { children: ReactNode }) {
 
   const clearStore = useCallback(async () => {
     if (!isAdmin(viewer)) return;
-    await clearSharedDepositStore();
+    if (isGitHubSyncConfigured()) {
+      const ok = await clearSharedDepositStore();
+      if (!ok) {
+        const detail = getLastGitHubSyncError();
+        throw new Error(
+          detail ? `github_sync_failed:${detail.status}:${detail.message}` : "github_sync_failed",
+        );
+      }
+    }
     clearUploadedExcelData();
   }, [viewer]);
 

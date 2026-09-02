@@ -131,6 +131,9 @@ async function writeSharedPayload(payload: SharedDepositPayload, message: string
 export async function fetchSharedDepositStore(): Promise<DepositStore | null> {
   try {
     const response = await fetch(`${sharedDataReadUrl()}?t=${Date.now()}`, { cache: "no-store" });
+    if (response.status === 404) {
+      return { syncedAt: null, activeItems: [], historyItems: [] };
+    }
     if (!response.ok) return null;
     return parseSharedDepositJson(await response.text());
   } catch {
@@ -164,8 +167,60 @@ export async function pushSharedDepositStore(store: DepositStore): Promise<Depos
 }
 
 export async function clearSharedDepositStore(): Promise<boolean> {
-  const result = await writeSharedPayload(createEmptySharedPayload(), "FFin: clear expired shared deposit data");
-  return result.ok;
+  const token = githubToken();
+  if (!token) {
+    lastSyncError = { status: 0, message: "missing_token" };
+    return false;
+  }
+
+  const repo = githubRepo();
+  const path = githubDataPath();
+  const branch = githubBranch();
+  const sha = await readContentSha(token);
+
+  if (sha) {
+    let response: Response;
+    try {
+      response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+        method: "DELETE",
+        headers: {
+          ...githubHeaders(token),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: "FFin: admin cleared shared deposit data",
+          sha,
+          branch,
+        }),
+        cache: "no-store",
+      });
+    } catch (err) {
+      const hint =
+        err instanceof TypeError
+          ? "network_or_cors"
+          : err instanceof Error
+            ? err.message
+            : "network_error";
+      lastSyncError = { status: 0, message: hint };
+      return false;
+    }
+
+    if (response.ok) {
+      lastSyncError = null;
+      return true;
+    }
+
+    lastSyncError = { status: response.status, message: await parseGitHubError(response) };
+    return false;
+  }
+
+  const result = await writeSharedPayload(createEmptySharedPayload(), "FFin: admin cleared shared deposit data");
+  if (!result.ok) {
+    lastSyncError = result.error;
+    return false;
+  }
+  lastSyncError = null;
+  return true;
 }
 
 export function isGitHubSyncConfigured(): boolean {

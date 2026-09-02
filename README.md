@@ -40,7 +40,7 @@ Vin’s Excel upload is converted to a **fixed JSON file** and written to GitHub
 - **Path:** `gh-pages/data/latest.json`
 - **Read:** every device fetches `https://liuchiwai0101.github.io/FFin/data/latest.json`
 - **Write:** admin upload uses the GitHub Contents API
-- **Expiry:** `expiresAt` is set to 48 hours after upload; a scheduled GitHub Action clears the file when expired
+- **Expiry:** `expiresAt` is set to 6 hours after upload; a scheduled GitHub Action clears the file when expired
 
 ### One-time setup (Vin only)
 

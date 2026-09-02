@@ -254,9 +254,33 @@ export default function SyncPageClient() {
           <button
             type="button"
             className="mt-3 text-xs font-semibold text-rose-600 hover:underline"
+            disabled={pending}
             onClick={() => {
-              clearStore();
-              setMessage(t("sync.cleared"));
+              setError("");
+              setMessage("");
+              startTransition(async () => {
+                try {
+                  await clearStore();
+                  setMessage(t("sync.cleared"));
+                  router.refresh();
+                } catch (err) {
+                  if (err instanceof Error && err.message.startsWith("github_sync_failed")) {
+                    const parts = err.message.split(":");
+                    if (parts.length >= 3) {
+                      setError(
+                        formatGitHubSyncError(
+                          { status: Number(parts[1]) || 0, message: parts.slice(2).join(":") },
+                          t,
+                        ),
+                      );
+                    } else {
+                      setError(t("sync.clearFailed"));
+                    }
+                    return;
+                  }
+                  setError(err instanceof Error ? err.message : t("sync.clearFailed"));
+                }
+              });
             }}
           >
             {t("sync.clearData")}

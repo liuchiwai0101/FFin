@@ -31,7 +31,7 @@ jobs:
           const now = Date.now();
           const expiresAt = raw.expiresAt ? Date.parse(raw.expiresAt) : NaN;
           const syncedAt = raw.syncedAt ? Date.parse(raw.syncedAt) : NaN;
-          const retentionMs = 48 * 60 * 60 * 1000;
+          const retentionMs = 6 * 60 * 60 * 1000;
           const expiredByExpiresAt = Number.isFinite(expiresAt) && now >= expiresAt;
           const expiredBySyncedAt = Number.isFinite(syncedAt) && now >= syncedAt + retentionMs;
           if (!expiredByExpiresAt && !expiredBySyncedAt) {
