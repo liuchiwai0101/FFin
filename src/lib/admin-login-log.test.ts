@@ -62,4 +62,12 @@ describe("admin-login-log", () => {
     clearAdminLoginLog();
     expect(readAdminLoginLog()).toHaveLength(0);
   });
+
+  it("returns a stable snapshot reference until the log changes", () => {
+    const admin = APP_USERS.find((user) => user.username === "Vin")!;
+    recordAdminLogin(admin, "Vin");
+    const first = readAdminLoginLog();
+    const second = readAdminLoginLog();
+    expect(first).toBe(second);
+  });
 });
