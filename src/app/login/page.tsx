@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useState, type FocusEvent } from "react";
 import { ExportJpgButton } from "@/components/export-jpg-button";
 import { LangToggle } from "@/components/lang-toggle";
 import { findUserByCredentials, writeSessionUser } from "@/lib/client-auth";
@@ -14,6 +14,12 @@ function LoginForm() {
   const t = useT();
   const next = params.get("next") || "/app";
   const [error, setError] = useState(params.get("error") === "1");
+
+  function scrollFieldIntoView(event: FocusEvent<HTMLInputElement>) {
+    window.setTimeout(() => {
+      event.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 300);
+  }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,6 +58,7 @@ function LoginForm() {
             name="email"
             type="text"
             autoComplete="username"
+            onFocus={scrollFieldIntoView}
           />
         </label>
         <label>
@@ -61,6 +68,7 @@ function LoginForm() {
             name="password"
             type="password"
             autoComplete="current-password"
+            onFocus={scrollFieldIntoView}
           />
         </label>
         <button className="button w-full">{t("login.submit")}</button>
