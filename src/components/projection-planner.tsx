@@ -107,87 +107,87 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
   return (
     <section
       id="projection-planner-root"
-      className="card shadow-sm border-teal-100 space-y-3 !p-4"
+      className="card shadow-sm border-teal-100 space-y-6 w-full min-w-0"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="h-5 w-5 rounded-full bg-teal-100 text-teal-800 text-[10px] font-black flex items-center justify-center shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="h-6 w-6 rounded-full bg-teal-100 text-teal-800 text-xs font-black flex items-center justify-center">
               6Y
             </span>
-            <h2 className="text-sm font-bold text-slate-900">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
               {t("overview.projectionsTitle")}
             </h2>
-            <span className="text-[10px] text-slate-500">
-              {t("overview.projectionsDesc")}{" "}
-              <strong className="text-slate-800 font-mono">{formatAmount(baseCapital, "HKD")}</strong>
-            </span>
           </div>
+          <p className="text-xs text-slate-500 mt-1">
+            {t("overview.projectionsDesc")}{" "}
+            <strong className="text-slate-800 font-mono">{formatAmount(baseCapital, "HKD")}</strong>
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 text-[10px] shrink-0">
-          <span className="inline-flex items-center gap-1 text-slate-600">
-            <span className="h-2 w-2 rounded-full bg-teal-400" /> {t("overview.conservativeYield")}
+        <div className="flex items-center gap-3 text-xs">
+          <span className="inline-flex items-center gap-1.5 text-slate-600">
+            <span className="h-2.5 w-2.5 rounded-full bg-teal-400" /> {t("overview.conservativeYield")}
           </span>
-          <span className="inline-flex items-center gap-1 text-emerald-800 font-bold">
-            <span className="h-2 w-2 rounded-full bg-emerald-600" />{" "}
+          <span className="inline-flex items-center gap-1.5 text-emerald-800 font-bold">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />{" "}
             {t("overview.targetYield", { rate: (avgTargetRate * 100).toFixed(1) })}
           </span>
         </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-2">
-          <div className="flex items-center justify-between gap-1 mb-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500 truncate">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-2 mb-4">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 leading-snug">
               {t("overview.strategyASummary")}
             </p>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
-                className="no-export h-5 w-5 rounded border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 cursor-pointer flex items-center justify-center"
+                className="no-export h-7 w-7 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer flex items-center justify-center"
                 onClick={resetConservativeRates}
                 title={t("overview.resetSheetRates")}
                 aria-label={t("overview.resetSheetRates")}
               >
-                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                   <path d="M3 3v5h5" />
                 </svg>
               </button>
-              <span className="badge text-[9px] px-1.5 py-0 bg-teal-50 text-teal-800 border border-teal-100">
+              <span className="badge text-[10px] bg-teal-50 text-teal-800 border border-teal-100">
                 {t("overview.lowRisk")}
               </span>
             </div>
           </div>
-          <div className="flex items-baseline justify-between gap-2 text-[10px]">
+          <div className="flex items-end justify-between gap-4">
             <div>
-              <span className="text-slate-400">{t("overview.finalBalance")}: </span>
-              <span className="font-black text-slate-900 font-mono text-sm">
+              <p className="text-[11px] text-slate-400">{t("overview.finalBalance")}</p>
+              <p className="text-xl font-black text-slate-900 font-mono">
                 {formatAmount(finalConservative, "HKD")}
-              </span>
+              </p>
             </div>
             <div className="text-right">
-              <span className="text-slate-400">{t("overview.totalInterest")}: </span>
-              <span className="font-black text-emerald-700 font-mono text-sm">
+              <p className="text-[11px] text-slate-400">{t("overview.totalInterest")}</p>
+              <p className="text-lg font-black text-emerald-700 font-mono">
                 +{formatAmount(totalConservativeProfit, "HKD")}
-              </span>
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 py-2">
-          <div className="flex items-center justify-between gap-1 mb-1.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500 truncate">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-2 mb-4">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500 leading-snug">
               {t("overview.strategyBSummary")}
             </p>
-            <div className="flex items-center gap-1 shrink-0">
-              <div className="flex gap-0.5 no-export">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex gap-1 no-export">
                 {TARGET_RATE_PRESETS.map((rate) => (
                   <button
                     key={rate}
                     type="button"
-                    className={`px-1.5 py-0 rounded text-[10px] font-bold cursor-pointer ${
+                    className={`px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer ${
                       targetRates.every((r) => Math.abs(r - rate) < 0.0001)
                         ? "bg-emerald-600 text-white"
                         : "bg-white border border-emerald-200 text-emerald-800 hover:bg-emerald-50"
@@ -198,23 +198,23 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
                   </button>
                 ))}
               </div>
-              <span className="badge text-[9px] px-1.5 py-0 bg-emerald-50 text-emerald-800 border border-emerald-100">
+              <span className="badge text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-100">
                 {t("overview.optimized")}
               </span>
             </div>
           </div>
-          <div className="flex items-baseline justify-between gap-2 text-[10px]">
+          <div className="flex items-end justify-between gap-4">
             <div>
-              <span className="text-slate-400">{t("overview.finalBalance")}: </span>
-              <span className="font-black text-slate-900 font-mono text-sm">
+              <p className="text-[11px] text-slate-400">{t("overview.finalBalance")}</p>
+              <p className="text-xl font-black text-slate-900 font-mono">
                 {formatAmount(finalTarget, "HKD")}
-              </span>
+              </p>
             </div>
             <div className="text-right">
-              <span className="text-slate-400">{t("overview.totalInterest")}: </span>
-              <span className="font-black text-emerald-700 font-mono text-sm">
+              <p className="text-[11px] text-slate-400">{t("overview.totalInterest")}</p>
+              <p className="text-lg font-black text-emerald-700 font-mono">
                 +{formatAmount(totalTargetProfit, "HKD")}
-              </span>
+              </p>
             </div>
           </div>
         </div>
@@ -228,68 +228,66 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
       />
 
       <div id="projection-breakdown">
-        <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+        <h3 className="text-sm font-bold text-slate-900 mb-3">
           {t("overview.detailedBreakdown")}
         </h3>
         <div className="projection-table-wrap">
           <table className="projection-table">
             <thead>
-              <tr className="bg-slate-50 text-left text-[9px] font-bold uppercase tracking-wide text-slate-500">
-                <th className="px-2 py-1.5">{t("overview.yearCol")}</th>
-                <th className="px-2 py-1.5">{t("overview.colConservativeRate")}</th>
-                <th className="px-2 py-1.5">{t("overview.colConservativeBalance")}</th>
-                <th className="px-2 py-1.5">{t("overview.colConservativeInterest")}</th>
-                <th className="px-2 py-1.5">{t("overview.colTargetRate")}</th>
-                <th className="px-2 py-1.5">{t("overview.colTargetBalance")}</th>
-                <th className="px-2 py-1.5">{t("overview.colTargetInterest")}</th>
+              <tr className="bg-slate-50 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                <th className="px-3 py-2.5">{t("overview.yearCol")}</th>
+                <th className="px-3 py-2.5">{t("overview.colConservativeRate")}</th>
+                <th className="px-3 py-2.5">{t("overview.colConservativeBalance")}</th>
+                <th className="px-3 py-2.5">{t("overview.colConservativeInterest")}</th>
+                <th className="px-3 py-2.5">{t("overview.colTargetRate")}</th>
+                <th className="px-3 py-2.5">{t("overview.colTargetBalance")}</th>
+                <th className="px-3 py-2.5">{t("overview.colTargetInterest")}</th>
               </tr>
             </thead>
             <tbody>
               {projectionRows.map((row, idx) => (
                 <tr key={idx} className="border-t border-slate-100 hover:bg-slate-50/60">
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-slate-900 w-8 shrink-0">{t(YEAR_KEYS[idx])}</span>
-                      <div className="h-1 w-10 rounded-full bg-slate-100 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-teal-500"
-                          style={{ width: `${((idx + 1) / 6) * 100}%` }}
-                        />
-                      </div>
+                  <td className="px-3 py-3">
+                    <div className="font-bold text-slate-900">{t(YEAR_KEYS[idx])}</div>
+                    <div className="mt-1.5 h-1.5 w-20 rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-teal-500"
+                        style={{ width: `${((idx + 1) / 6) * 100}%` }}
+                      />
                     </div>
                   </td>
-                  <td className="px-2 py-1.5">
+                  <td className="px-3 py-3">
                     <input
                       type="number"
                       step="0.01"
                       min="0"
-                      className="w-14 rounded border border-slate-200 px-1 py-0.5 font-mono text-center text-[10px]"
+                      className="w-20 rounded border border-slate-200 px-2 py-1 font-mono text-center"
                       value={rateToPercentInput(row.cRate)}
                       onChange={(e) => setConservativeRate(idx, e.target.value)}
                       aria-label={`${t(YEAR_KEYS[idx])} ${t("overview.conservative")}`}
                     />
                   </td>
-                  <td className="px-2 py-1.5 font-mono font-semibold text-slate-900 whitespace-nowrap">
+                  <td className="px-3 py-3 font-mono font-semibold text-slate-900 whitespace-nowrap">
                     {formatAmount(row.cBase, "HKD")}
                   </td>
-                  <td className="px-2 py-1.5 font-mono font-semibold text-emerald-700 whitespace-nowrap">
+                  <td className="px-3 py-3 font-mono font-semibold text-emerald-700 whitespace-nowrap">
                     +{formatAmount(row.cInterest, "HKD")}
                   </td>
-                  <td className="px-2 py-1.5">
+                  <td className="px-3 py-3">
                     <input
                       type="number"
                       step="0.1"
                       min="0"
-                      className="w-14 rounded border border-emerald-200 px-1 py-0.5 font-mono text-center text-[10px]"
+                      className="w-20 rounded border border-emerald-200 px-2 py-1 font-mono text-center"
                       value={rateToPercentInput(row.tRate)}
                       onChange={(e) => setTargetRate(idx, e.target.value)}
                       aria-label={`${t(YEAR_KEYS[idx])} ${t("overview.target")}`}
                     />
                   </td>
-                  <td className="px-2 py-1.5 font-mono font-bold text-slate-900 whitespace-nowrap">
+                  <td className="px-3 py-3 font-mono font-bold text-slate-900 whitespace-nowrap">
                     {formatAmount(row.tBase, "HKD")}
                   </td>
-                  <td className="px-2 py-1.5 font-mono font-bold text-emerald-700 whitespace-nowrap">
+                  <td className="px-3 py-3 font-mono font-bold text-emerald-700 whitespace-nowrap">
                     +{formatAmount(row.tInterest, "HKD")}
                   </td>
                 </tr>
@@ -299,10 +297,10 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
         </div>
       </div>
 
-      <div className="no-export flex flex-wrap items-center justify-end gap-1.5">
+      <div className="no-export flex flex-wrap items-center justify-end gap-2 pt-1">
         <button
           type="button"
-          className="button-secondary !px-2.5 !py-1 text-[10px]"
+          className="button-secondary text-xs"
           onClick={() =>
             document.getElementById("projection-breakdown")?.scrollIntoView({ behavior: "smooth" })
           }
@@ -311,11 +309,11 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
         </button>
         <button
           type="button"
-          className="button !px-2.5 !py-1 text-[10px] inline-flex items-center gap-1"
+          className="button text-xs inline-flex items-center gap-1.5"
           onClick={downloadReport}
           disabled={downloading}
         >
-          <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
