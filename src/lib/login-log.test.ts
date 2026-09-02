@@ -75,13 +75,20 @@ describe("login-log", () => {
     expect(readLoginLog()).toBe(readLoginLog());
   });
 
-  it("merges remote and local entries without duplicates", () => {
-    const admin = APP_USERS.find((user) => user.username === "Vin")!;
-    const member = APP_USERS.find((user) => user.username === "Miki")!;
-    const vinEntry = recordLogin(admin, "Vin");
-    const mikiEntry = recordLogin(member, "Miki");
+  it("keeps every merged entry without trimming", () => {
+    const entries = Array.from({ length: 120 }, (_, index) => ({
+      loggedAt: new Date(Date.UTC(2026, 0, 1, index)).toISOString(),
+      userId: `user-${index}`,
+      username: "Vin",
+      name: "Vin",
+      role: "ADMIN" as const,
+      accountEntered: "Vin",
+      userAgent: "vitest",
+      language: "en-US",
+      timezone: "Asia/Hong_Kong",
+      pageUrl: "https://example.com/login",
+    }));
 
-    const merged = mergeLoginEntries(readLoginLog(), [vinEntry, mikiEntry]);
-    expect(merged).toHaveLength(2);
+    expect(mergeLoginEntries(entries)).toHaveLength(120);
   });
 });

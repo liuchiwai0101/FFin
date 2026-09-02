@@ -20,7 +20,6 @@ export type SharedLoginLogPayload = {
 
 const STORAGE_KEY = "ffin_login_log";
 const LEGACY_STORAGE_KEY = "ffin_admin_login_log";
-export const MAX_LOGIN_LOG_ENTRIES = 100;
 const EMPTY_LOG: LoginEntry[] = [];
 
 const listeners = new Set<() => void>();
@@ -56,9 +55,7 @@ export function mergeLoginEntries(...groups: LoginEntry[][]): LoginEntry[] {
       merged.set(entryKey(entry), entry);
     }
   }
-  return [...merged.values()]
-    .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt))
-    .slice(0, MAX_LOGIN_LOG_ENTRIES);
+  return [...merged.values()].sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
 }
 
 function persistLog(entries: LoginEntry[]) {

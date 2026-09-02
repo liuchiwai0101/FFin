@@ -6,7 +6,6 @@ import { type FormEvent, useEffect, useState, useSyncExternalStore, useTransitio
 import { useDepositData } from "@/components/deposit-provider";
 import { useLocale } from "@/lib/i18n/locale-provider";
 import {
-  clearLoginLog,
   readLoginLog,
   subscribeLoginLog,
 } from "@/lib/login-log";
@@ -343,11 +342,17 @@ export default function SyncPageClient() {
 
       <div className="card p-6 shadow-sm border-slate-200">
         <h2 className="text-base font-bold text-slate-900">{t("sync.loginLogTitle")}</h2>
-        <p className="text-xs text-slate-500 mt-1 mb-4">{t("sync.loginLogDesc")}</p>
+        <p className="text-xs text-slate-500 mt-1">{t("sync.loginLogDesc")}</p>
+        {loginLog.length > 0 && (
+          <p className="text-[11px] font-semibold text-teal-800 mt-2">
+            {t("sync.loginLogCount", { count: loginLog.length })}
+          </p>
+        )}
+        <div className="mt-4">
         {loginLog.length === 0 ? (
           <p className="text-xs text-slate-500">{t("sync.loginLogEmpty")}</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-80 overflow-y-auto">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
@@ -378,18 +383,7 @@ export default function SyncPageClient() {
             </table>
           </div>
         )}
-        {loginLog.length > 0 && (
-          <button
-            type="button"
-            className="mt-4 text-xs font-semibold text-rose-600 hover:underline"
-            onClick={() => {
-              clearLoginLog();
-              setMessage(t("sync.loginLogCleared"));
-            }}
-          >
-            {t("sync.loginLogClear")}
-          </button>
-        )}
+        </div>
       </div>
 
       <p className="text-center text-xs text-slate-400">
