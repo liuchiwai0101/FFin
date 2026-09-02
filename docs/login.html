@@ -25,13 +25,14 @@
       <p class="subtitle"><a href="./index.html">Back to home</a></p>
     </form>
   </main>
+  <script src="./assets/auth-config.js"></script>
   <script src="./assets/app.js"></script>
   <script>
     if (FFin.isLoggedIn()) location.href = "./overview.html";
-    document.getElementById("login-form").addEventListener("submit", (e) => {
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const fd = new FormData(e.currentTarget);
-      const ok = FFin.login(fd.get("email"), fd.get("password"));
+      const ok = await FFin.login(fd.get("email"), fd.get("password"));
       if (!ok) {
         document.getElementById("error").hidden = false;
         return;

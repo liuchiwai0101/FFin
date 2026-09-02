@@ -6,7 +6,7 @@ import {
   SESSION_COOKIE,
   createSessionToken,
 } from "@/lib/session";
-import { findUserByCredentials } from "@/lib/users";
+import { findUserByCredentials } from "@/lib/users-auth";
 
 export async function loginAction(formData: FormData) {
   const account = String(formData.get("email") ?? "");

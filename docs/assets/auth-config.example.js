@@ -1,0 +1,1 @@
+window.FFIN_PASSWORD_HASHES = {};

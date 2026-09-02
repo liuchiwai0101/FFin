@@ -516,14 +516,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     { id: "baba", username: "BABA", name: "BABA", ownerKey: "BABA", role: "MEMBER" },
   ];
 
-  function defaultPassword(username) { return username + "123"; }
-  function findUserByCredentials(account, password) {
+  const FFIN_PASSWORD_HASHES = {};
+
+  async function sha256Hex(text) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(text)));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  async function findUserByCredentials(account, password) {
     const normalized = String(account || "").trim().toLowerCase();
     const user = APP_USERS.find((u) =>
       u.username.toLowerCase() === normalized ||
       u.username.toLowerCase() + "@family.local" === normalized);
-    if (!user || password !== defaultPassword(user.username)) return null;
-    return user;
+    if (!user) return null;
+    const expected = FFIN_PASSWORD_HASHES[user.username];
+    if (!expected) return null;
+    const actual = await sha256Hex(password);
+    return actual === expected ? user : null;
   }
   function getCurrentUser() {
     const id = localStorage.getItem(AUTH_KEY);
@@ -631,8 +639,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function saveStore(store) { localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); }
   function clearStore() { localStorage.removeItem(STORAGE_KEY); }
   function isLoggedIn() { return Boolean(getCurrentUser()); }
-  function login(account, password) {
-    const user = findUserByCredentials(account, password);
+  async function login(account, password) {
+    const user = await findUserByCredentials(account, password);
     if (!user) return false;
     localStorage.setItem(AUTH_KEY, user.id);
     return true;
@@ -752,7 +760,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const el = document.getElementById("tab-overview");
     if (!store.activeItems.length && !store.historyItems.length) {
       el.innerHTML = '<div class="card"><h1>No Excel data loaded</h1><p class="subtitle">' +
-        (admin ? "Upload on Sync Excel first." : "No holdings are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook.") +
+        (admin ? "Upload on Sync Excel first." : "No holdings are visible for your account yet. Ask an admin to upload the family Excel workbook.") +
         "</p></div>";
       return;
     }
@@ -836,7 +844,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const el = document.getElementById("tab-current");
     if (!store.activeItems.length) {
       el.innerHTML = '<div class="card"><h1>No current products</h1><p class="subtitle">' +
-        (admin ? "Upload Excel on Sync first." : "No holdings are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook.") +
+        (admin ? "Upload Excel on Sync first." : "No holdings are visible for your account yet. Ask an admin to upload the family Excel workbook.") +
         "</p></div>";
       return;
     }
@@ -905,7 +913,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     const el = document.getElementById("tab-history");
     if (!store.historyItems.length) {
       el.innerHTML = '<div class="card"><h1>No history loaded</h1><p class="subtitle">' +
-        (admin ? "Upload Excel on Sync first." : "No matured interest records are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook.") +
+        (admin ? "Upload Excel on Sync first." : "No matured interest records are visible for your account yet. Ask an admin to upload the family Excel workbook.") +
         "</p></div>";
       return;
     }
@@ -986,10 +994,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }));
   }
 
-  document.getElementById("login-form").addEventListener("submit", (e) => {
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    if (!login(fd.get("email"), fd.get("password"))) {
+    if (!(await login(fd.get("email"), fd.get("password")))) {
       document.getElementById("login-error").hidden = false;
       return;
     }

@@ -1,10 +1,15 @@
 import { cookies } from "next/headers";
-import { findUserByCredentials, findUserById, type AppUser } from "@/lib/users";
+import { findUserById, type AppUser } from "@/lib/users";
 
 export const SESSION_COOKIE = "ffin_session";
 
 function authSecret() {
-  return process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "ffin-dev-secret-change-me";
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET is required in production");
+  }
+  return "local-dev-only-not-for-production";
 }
 
 function toBase64Url(value: string): string {
@@ -33,10 +38,6 @@ export function verifySessionToken(token: string | undefined | null): string | n
   const sig = token.slice(dot + 1);
   if (sig !== toBase64Url(`${userId}:${authSecret()}`)) return null;
   return userId;
-}
-
-export function credentialsMatch(account: string, password: string) {
-  return Boolean(findUserByCredentials(account, password));
 }
 
 export async function getSessionUser(): Promise<AppUser | null> {

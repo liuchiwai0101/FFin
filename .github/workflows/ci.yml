@@ -8,6 +8,8 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      AUTH_SECRET: ci-placeholder-not-for-production
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -18,3 +20,5 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+        env:
+          AUTH_SECRET: ci-placeholder-not-for-production

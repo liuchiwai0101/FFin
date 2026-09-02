@@ -3,7 +3,11 @@ import { SystemRole } from "@prisma/client";
 import { db } from "../src/lib/db";
 
 async function main() {
-  const passwordHash = await bcrypt.hash("admin123", 12);
+  const password = process.env.SEED_PASSWORD;
+  if (!password) {
+    throw new Error("SEED_PASSWORD is required");
+  }
+  const passwordHash = await bcrypt.hash(password, 12);
 
   // 1. Seed default Vin account
   const vin = await db.user.upsert({

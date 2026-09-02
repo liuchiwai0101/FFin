@@ -9,6 +9,7 @@
 <body>
   <div id="app-shell"></div>
   <main class="main space-y" id="content"></main>
+  <script src="./assets/auth-config.js"></script>
   <script src="./assets/app.js"></script>
   <script>
     if (!FFin.requireAuth()) throw new Error("auth");
@@ -23,7 +24,7 @@
           <h1>No Excel data loaded</h1>
           <p class="subtitle">${admin
             ? "Upload your bank interest workbook to populate this overview."
-            : "No holdings are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook."}</p>
+            : "No holdings are visible for your account yet. Ask an admin to upload the family Excel workbook."}</p>
           ${admin ? '<p style="margin-top:1rem;"><a class="btn" href="./sync.html">Upload Excel</a></p>' : ""}
         </div>`;
     } else {
