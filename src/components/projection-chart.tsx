@@ -30,8 +30,8 @@ export function ProjectionChart({
 }: ProjectionChartProps) {
   const width = 720;
   const height = 176;
-  const padLeft = 16;
-  const padRight = 56;
+  const padLeft = 8;
+  const padRight = 48;
   const padTop = 10;
   const padBottom = 24;
   const plotW = width - padLeft - padRight;
@@ -60,7 +60,7 @@ export function ProjectionChart({
   const yTicks = Array.from({ length: ticks }, (_, i) => min + ((max - min) * i) / (ticks - 1));
 
   return (
-    <div className="rounded-lg border border-slate-200/80 bg-white px-2 py-1.5">
+    <div className="rounded-lg border border-slate-200/80 bg-white px-1 py-1.5">
       <div className="flex items-center justify-center gap-4 mb-1 text-[10px] font-semibold text-slate-600">
         <span className="inline-flex items-center gap-1.5">
           <span className="w-6 border-t border-dashed border-teal-400" />
@@ -74,7 +74,8 @@ export function ProjectionChart({
 
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="w-full h-auto max-h-[148px]"
+        className="block w-full h-[148px]"
+        preserveAspectRatio="none"
         role="img"
         aria-label="Compound growth projection chart"
       >
@@ -91,8 +92,9 @@ export function ProjectionChart({
                 strokeWidth="1"
               />
               <text
-                x={width - padRight + 4}
+                x={width - 2}
                 y={y + 3}
+                textAnchor="end"
                 fill="#94a3b8"
                 fontSize="9"
                 fontFamily="ui-monospace, monospace"
