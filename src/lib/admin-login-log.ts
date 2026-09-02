@@ -14,36 +14,67 @@ export type AdminLoginEntry = {
 
 const STORAGE_KEY = "ffin_admin_login_log";
 const MAX_ENTRIES = 50;
+const EMPTY_LOG: AdminLoginEntry[] = [];
 
 const listeners = new Set<() => void>();
+let cachedRaw: string | null | undefined;
+let cachedLog: AdminLoginEntry[] = EMPTY_LOG;
 
 function notify() {
   listeners.forEach((listener) => listener());
 }
 
-export function subscribeAdminLoginLog(onChange: () => void) {
-  listeners.add(onChange);
-  return () => listeners.delete(onChange);
+function invalidateCache() {
+  cachedRaw = undefined;
 }
 
 function parseLog(raw: string | null): AdminLoginEntry[] {
-  if (!raw) return [];
+  if (!raw) return EMPTY_LOG;
   try {
     const parsed = JSON.parse(raw) as AdminLoginEntry[];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed : EMPTY_LOG;
   } catch {
-    return [];
+    return EMPTY_LOG;
   }
 }
 
+function persistLog(entries: AdminLoginEntry[]) {
+  const serialized = JSON.stringify(entries);
+  window.localStorage.setItem(STORAGE_KEY, serialized);
+  cachedRaw = serialized;
+  cachedLog = entries;
+  notify();
+}
+
+export function subscribeAdminLoginLog(onChange: () => void) {
+  listeners.add(onChange);
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === STORAGE_KEY || event.key === null) {
+      invalidateCache();
+      onChange();
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    listeners.delete(onChange);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
 export function readAdminLoginLog(): AdminLoginEntry[] {
-  if (typeof window === "undefined") return [];
-  return parseLog(window.localStorage.getItem(STORAGE_KEY));
+  if (typeof window === "undefined") return EMPTY_LOG;
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (raw === cachedRaw) return cachedLog;
+  cachedRaw = raw;
+  cachedLog = parseLog(raw);
+  return cachedLog;
 }
 
 export function clearAdminLoginLog() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(STORAGE_KEY);
+  cachedRaw = null;
+  cachedLog = EMPTY_LOG;
   notify();
 }
 
@@ -63,8 +94,7 @@ export function recordAdminLogin(user: AppUser, accountEntered: string): AdminLo
   };
 
   const next = [entry, ...readAdminLoginLog()].slice(0, MAX_ENTRIES);
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  notify();
+  persistLog(next);
 
   console.info("[FFin admin login]", {
     loggedAt: entry.loggedAt,
