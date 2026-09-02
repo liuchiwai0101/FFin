@@ -12,8 +12,6 @@ Open **this exact address** (the `/FFin/` path is required):
 
 `https://liuchiwai0101.github.io` with no `/FFin/` is a 404. That is the empty user site, not this app.
 
-Do not put passwords or Excel files in the repository. Sign-in secrets live in `.env` (local) and GitHub Actions secret `FFIN_PASSWORDS` (Pages).
-
 ## If you see “There isn't a GitHub Pages site here”
 
 The `gh-pages` files are already in the repo. GitHub still returns 404 until **both** of these are true (News already has them):
@@ -25,8 +23,7 @@ The `gh-pages` files are already in the repo. GitHub still returns 404 until **b
    - **Settings → Pages → Build and deployment**
    - Source: **Deploy from a branch**
    - Branch: **`gh-pages`** / **`/(root)`** → **Save**
-3. Set repository secret **`FFIN_PASSWORDS`** to a JSON map of username → password (same keys as the family accounts). The Pages workflow writes only SHA-256 hashes into the published site.
-4. Wait about a minute, then open https://liuchiwai0101.github.io/FFin/
+3. Wait about a minute, then open https://liuchiwai0101.github.io/FFin/
 
 **About → Website** should be `https://liuchiwai0101.github.io/FFin/` (not Vercel).
 
@@ -41,13 +38,12 @@ If github.io is slow after it is live:
 
 ## Portable single HTML (offline)
 
-Download **[docs/Family-Finance-Portable.html](docs/Family-Finance-Portable.html)** after generating password hashes locally (`npm run auth:hashes`) if you need offline sign-in. Open in a browser, upload Excel — no server.
+Download **[docs/Family-Finance-Portable.html](docs/Family-Finance-Portable.html)**. Open in a browser, upload Excel — no server.
 
 ## Local Next.js
 
 ```bash
 cp .env.example .env
-# set AUTH_SECRET and FFIN_PASSWORDS (JSON username-to-password map)
 npm install
 npm run dev
 ```
@@ -57,17 +53,12 @@ Open http://localhost:3000 → Sign in → Sync Excel → upload `Summary.xlsx`.
 Local preview of the GitHub Pages app:
 
 ```bash
-cp docs/assets/auth-config.example.js docs/assets/auth-config.js
-npm run auth:hashes
 npx --yes serve docs -p 4173
 ```
 
 ## Optional: Next.js on a VPS
 
-The full Next.js app needs a Node.js server. There is no reliable **free** host that both runs Next.js and is reachable from mainland China.
-
 ```bash
 cp .env.example .env
-# set AUTH_SECRET and FFIN_PASSWORDS
 docker compose up -d --build
 ```

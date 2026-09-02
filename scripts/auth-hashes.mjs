@@ -1,7 +1,3 @@
-/**
- * Writes docs/assets/auth-config.js from FFIN_PASSWORDS in the environment or .env.
- * Usage: FFIN_PASSWORDS='{"Vin":"..."}' npm run auth:hashes
- */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -32,12 +28,12 @@ let map = {};
 try {
   map = JSON.parse(process.env.FFIN_PASSWORDS || "{}");
 } catch {
-  console.error("FFIN_PASSWORDS must be JSON, e.g. {\"Vin\":\"your-password\"}");
+  console.error("FFIN_PASSWORDS is missing or invalid.");
   process.exit(1);
 }
 
 if (!map || typeof map !== "object" || Array.isArray(map) || Object.keys(map).length === 0) {
-  console.error("Set FFIN_PASSWORDS to a JSON object of username -> password.");
+  console.error("FFIN_PASSWORDS is empty.");
   process.exit(1);
 }
 

@@ -20,7 +20,6 @@ function parseJsonMap(raw: string | undefined): Record<string, string> {
   }
 }
 
-/** SHA-256 hex for a username, from FFIN_PASSWORD_HASHES or FFIN_PASSWORDS. Never hardcode secrets. */
 export function passwordHashFor(username: string): string | null {
   const hashes = parseJsonMap(process.env.FFIN_PASSWORD_HASHES);
   if (hashes[username]) return hashes[username];

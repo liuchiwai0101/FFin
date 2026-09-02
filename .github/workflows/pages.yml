@@ -47,7 +47,7 @@ jobs:
               }
             }
           } catch (err) {
-            console.warn("FFIN_PASSWORDS is missing or invalid; static login stays disabled.");
+            console.warn("FFIN_PASSWORDS is missing or invalid.");
           }
           fs.mkdirSync("/tmp/ffin-pages/assets", { recursive: true });
           fs.writeFileSync(

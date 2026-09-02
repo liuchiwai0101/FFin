@@ -17,7 +17,7 @@ const TEST_PASSWORDS = {
 process.env.FFIN_PASSWORDS = JSON.stringify(TEST_PASSWORDS);
 
 describe("users", () => {
-  it("authenticates configured accounts from FFIN_PASSWORDS", () => {
+  it("authenticates configured accounts", () => {
     for (const user of APP_USERS) {
       expect(
         findUserByCredentials(user.username, TEST_PASSWORDS[user.username as keyof typeof TEST_PASSWORDS]),
@@ -25,7 +25,7 @@ describe("users", () => {
     }
   });
 
-  it("rejects invalid credentials and missing env passwords", () => {
+  it("rejects invalid credentials", () => {
     expect(findUserByCredentials("Vin", "wrong")).toBeNull();
     expect(findUserByCredentials("unknown", TEST_PASSWORDS.Vin)).toBeNull();
     const previous = process.env.FFIN_PASSWORDS;

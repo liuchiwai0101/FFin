@@ -5,7 +5,7 @@ import { db } from "../src/lib/db";
 async function main() {
   const password = process.env.SEED_PASSWORD;
   if (!password) {
-    throw new Error("Set SEED_PASSWORD before running prisma seed. Do not hardcode credentials.");
+    throw new Error("SEED_PASSWORD is required");
   }
   const passwordHash = await bcrypt.hash(password, 12);
 
