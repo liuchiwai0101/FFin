@@ -50,7 +50,8 @@ export default function SyncPageClient() {
     event.preventDefault();
     setError("");
     setMessage("");
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     startTransition(async () => {
       try {
         const file = formData.get("file");
@@ -73,7 +74,7 @@ export default function SyncPageClient() {
             history: payload.historyItems.length,
           }),
         );
-        event.currentTarget.reset();
+        form.reset();
         router.refresh();
       } catch (err) {
         if (err instanceof Error && err.message.startsWith("github_sync_failed")) {
@@ -99,7 +100,8 @@ export default function SyncPageClient() {
     event.preventDefault();
     setError("");
     setMessage("");
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     startTransition(async () => {
       try {
         const file = formData.get("backup");
@@ -118,7 +120,7 @@ export default function SyncPageClient() {
             history: payload.historyItems.length,
           }),
         );
-        event.currentTarget.reset();
+        form.reset();
         router.refresh();
       } catch {
         setError(t("sync.importFailed"));
