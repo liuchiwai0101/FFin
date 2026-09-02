@@ -1,4 +1,6 @@
 import type { DepositStore } from "@/lib/deposit-types";
+import type { LoginEntry, SharedLoginLogPayload } from "@/lib/login-log";
+import { mergeLoginEntries } from "@/lib/login-log";
 import { readGitHubSyncToken } from "@/lib/github-token-storage";
 import {
   createEmptySharedPayload,
@@ -20,6 +22,8 @@ export type GitHubSyncError = {
 
 type WriteResult = { ok: true } | { ok: false; error: GitHubSyncError };
 
+let lastSyncError: GitHubSyncError | null = null;
+
 function githubRepo(): string {
   return process.env.NEXT_PUBLIC_GITHUB_REPO || "liuchiwai0101/FFin";
 }
@@ -33,6 +37,10 @@ function githubDataPath(): string {
   return process.env.NEXT_PUBLIC_GITHUB_DATA_PATH || "public/data/latest.json";
 }
 
+function githubLoginLogPath(): string {
+  return process.env.NEXT_PUBLIC_GITHUB_LOGIN_LOG_PATH || "public/data/login-log.json";
+}
+
 function githubToken(): string | null {
   return readGitHubSyncToken();
 }
@@ -42,6 +50,11 @@ export function sharedDataReadUrl(): string {
   if (custom) return custom;
   const [owner, repo] = githubRepo().split("/");
   return `https://raw.githubusercontent.com/${owner}/${repo}/${githubBranch()}/${githubDataPath()}`;
+}
+
+export function sharedLoginLogReadUrl(): string {
+  const [owner, repo] = githubRepo().split("/");
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${githubBranch()}/${githubLoginLogPath()}`;
 }
 
 function githubHeaders(token: string): HeadersInit {
@@ -69,9 +82,8 @@ function toBase64Utf8(text: string): string {
   return btoa(binary);
 }
 
-async function readContentSha(token: string): Promise<string | undefined> {
+async function readContentSha(token: string, path = githubDataPath()): Promise<string | undefined> {
   const repo = githubRepo();
-  const path = githubDataPath();
   const branch = githubBranch();
   const response = await fetch(
     `https://api.github.com/repos/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`,
@@ -81,6 +93,69 @@ async function readContentSha(token: string): Promise<string | undefined> {
   if (!response.ok) return undefined;
   const meta = (await response.json()) as GitHubContentMeta;
   return meta.sha;
+}
+
+function parseSharedLoginLogJson(raw: string): LoginEntry[] {
+  try {
+    const parsed = JSON.parse(raw) as SharedLoginLogPayload | LoginEntry[];
+    if (Array.isArray(parsed)) return mergeLoginEntries(parsed);
+    if (parsed && Array.isArray(parsed.entries)) return mergeLoginEntries(parsed.entries);
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function serializeSharedLoginLog(entries: LoginEntry[]): string {
+  const payload: SharedLoginLogPayload = { version: 1, entries: mergeLoginEntries(entries) };
+  return JSON.stringify(payload, null, 2);
+}
+
+async function writeGitHubJsonFile(
+  path: string,
+  body: string,
+  message: string,
+): Promise<WriteResult> {
+  const token = githubToken();
+  if (!token) {
+    return { ok: false, error: { status: 0, message: "missing_token" } };
+  }
+
+  const repo = githubRepo();
+  const branch = githubBranch();
+  const sha = await readContentSha(token, path);
+
+  let response: Response;
+  try {
+    response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+      method: "PUT",
+      headers: {
+        ...githubHeaders(token),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message,
+        content: toBase64Utf8(body),
+        branch,
+        ...(sha ? { sha } : {}),
+      }),
+      cache: "no-store",
+    });
+  } catch (err) {
+    const hint =
+      err instanceof TypeError
+        ? "network_or_cors"
+        : err instanceof Error
+          ? err.message
+          : "network_error";
+    return { ok: false, error: { status: 0, message: hint } };
+  }
+
+  if (!response.ok) {
+    return { ok: false, error: { status: response.status, message: await parseGitHubError(response) } };
+  }
+
+  return { ok: true };
 }
 
 async function writeSharedPayload(payload: SharedDepositPayload, message: string): Promise<WriteResult> {
@@ -128,6 +203,33 @@ async function writeSharedPayload(payload: SharedDepositPayload, message: string
   return { ok: true };
 }
 
+export async function fetchSharedLoginLog(): Promise<LoginEntry[]> {
+  try {
+    const response = await fetch(`${sharedLoginLogReadUrl()}?t=${Date.now()}`, { cache: "no-store" });
+    if (response.status === 404) return [];
+    if (!response.ok) return [];
+    return parseSharedLoginLogJson(await response.text());
+  } catch {
+    return [];
+  }
+}
+
+export async function pushSharedLoginLog(entries: LoginEntry[]): Promise<boolean> {
+  const remote = await fetchSharedLoginLog();
+  const merged = mergeLoginEntries(entries, remote);
+  const result = await writeGitHubJsonFile(
+    githubLoginLogPath(),
+    serializeSharedLoginLog(merged),
+    "FFin: sync family login log",
+  );
+  if (!result.ok) {
+    lastSyncError = result.error;
+    return false;
+  }
+  lastSyncError = null;
+  return true;
+}
+
 export async function fetchSharedDepositStore(): Promise<DepositStore | null> {
   try {
     const response = await fetch(`${sharedDataReadUrl()}?t=${Date.now()}`, { cache: "no-store" });
@@ -140,8 +242,6 @@ export async function fetchSharedDepositStore(): Promise<DepositStore | null> {
     return null;
   }
 }
-
-let lastSyncError: GitHubSyncError | null = null;
 
 export function getLastGitHubSyncError(): GitHubSyncError | null {
   return lastSyncError;
