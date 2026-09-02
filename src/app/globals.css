@@ -272,11 +272,10 @@ body {
 }
 
 .user-summary-card {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: 0.85rem;
 }
 
 .user-summary-identity {
@@ -291,21 +290,21 @@ body {
   grid-template-columns: 1fr;
   gap: 0.55rem;
   width: 100%;
+  min-width: 0;
 }
 
 @media (min-width: 480px) {
   .user-summary-metrics {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.65rem 0.85rem;
-    width: auto;
-    flex: 1 1 100%;
   }
 }
 
 @media (min-width: 768px) {
   .user-summary-card {
-    align-items: center;
-    gap: 1rem 1.75rem;
+    grid-template-columns: auto 1fr;
+    column-gap: 1.75rem;
+    row-gap: 0.75rem;
   }
 
   .user-summary-identity {
@@ -316,7 +315,6 @@ body {
   .user-summary-metrics {
     grid-template-columns: repeat(3, minmax(7.5rem, 1fr));
     gap: 0.75rem 1.25rem;
-    flex: 1 1 18rem;
   }
 }
 

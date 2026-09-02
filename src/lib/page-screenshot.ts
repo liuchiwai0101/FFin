@@ -28,27 +28,21 @@ export function exportScale(root: HTMLElement, maxDimension = 8192): number {
 function prepareClonedNode(node: Node) {
   if (!(node instanceof HTMLElement)) return;
 
-  const style = window.getComputedStyle(node);
-  const overflowBlocksCapture =
-    style.overflow === "auto" ||
-    style.overflow === "scroll" ||
-    style.overflow === "hidden" ||
-    style.overflowX === "auto" ||
-    style.overflowX === "scroll" ||
-    style.overflowX === "hidden" ||
-    style.overflowY === "auto" ||
-    style.overflowY === "scroll" ||
-    style.overflowY === "hidden";
-
-  if (overflowBlocksCapture) {
+  if (node.classList.contains("overflow-x-auto")) {
     node.style.overflow = "visible";
     node.style.overflowX = "visible";
-    node.style.overflowY = "visible";
-    node.style.maxHeight = "none";
-    node.style.maxWidth = "none";
+    node.style.width = `${node.scrollWidth}px`;
+    return;
   }
 
-  if (style.position === "sticky" || style.position === "fixed") {
+  const style = window.getComputedStyle(node);
+
+  if (node.classList.contains("app-shell")) {
+    node.style.overflow = "visible";
+    node.style.overflowX = "visible";
+  }
+
+  if (node.classList.contains("app-topbar") || style.position === "sticky" || style.position === "fixed") {
     node.style.position = "static";
   }
 }
@@ -63,17 +57,10 @@ export async function captureFullPageJpeg(root: HTMLElement): Promise<string> {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
 
-    const { width, height } = getFullPageSize(root);
-
     return await domToJpeg(root, {
       quality: 0.92,
       scale: exportScale(root),
-      width,
-      height,
       backgroundColor: "#f8fafc",
-      features: {
-        restoreScrollPosition: true,
-      },
       filter: (node) => !(node instanceof Element && node.classList.contains("no-print")),
       onCloneEachNode: prepareClonedNode,
     });
