@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "auth:hashes": "node scripts/auth-hashes.mjs"
   },
   "dependencies": {
     "modern-screenshot": "^4.7.0",

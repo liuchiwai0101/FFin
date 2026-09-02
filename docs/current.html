@@ -60,6 +60,7 @@
       </div>
     </div>
   </main>
+  <script src="./assets/auth-config.js"></script>
   <script src="./assets/app.js"></script>
   <script>
     if (!FFin.requireAuth()) throw new Error("auth");
@@ -79,7 +80,7 @@
       const empty = document.getElementById("empty");
       if (empty) {
         empty.querySelector(".subtitle").textContent =
-          "No holdings are visible for your account yet. Ask Vin (admin) to upload the family Excel workbook.";
+          "No holdings are visible for your account yet. Ask an admin to upload the family Excel workbook.";
         const uploadLink = empty.querySelector("a.btn");
         if (uploadLink) uploadLink.remove();
       }

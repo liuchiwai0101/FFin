@@ -9,19 +9,26 @@
     { id: "baba", username: "BABA", name: "BABA", ownerKey: "BABA", role: "MEMBER" },
   ];
 
-  function defaultPassword(username) {
-    return `${username}123`;
+  async function sha256Hex(text) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(text)));
+    return Array.from(new Uint8Array(buf))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
   }
 
-  function findUserByCredentials(account, password) {
+  async function findUserByCredentials(account, password) {
     const normalized = String(account || "").trim().toLowerCase();
     const user = APP_USERS.find(
       (u) =>
         u.username.toLowerCase() === normalized ||
         `${u.username.toLowerCase()}@family.local` === normalized,
     );
-    if (!user || password !== defaultPassword(user.username)) return null;
-    return user;
+    if (!user) return null;
+    const hashes = window.FFIN_PASSWORD_HASHES || {};
+    const expected = hashes[user.username];
+    if (!expected) return null;
+    const actual = await sha256Hex(password);
+    return actual === expected ? user : null;
   }
 
   function getCurrentUser() {
@@ -203,8 +210,8 @@
     return Boolean(getCurrentUser());
   }
 
-  function login(account, password) {
-    const user = findUserByCredentials(account, password);
+  async function login(account, password) {
+    const user = await findUserByCredentials(account, password);
     if (!user) return false;
     localStorage.setItem(AUTH_KEY, user.id);
     return true;

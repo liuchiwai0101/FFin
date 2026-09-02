@@ -2,27 +2,36 @@ import { describe, expect, it } from "vitest";
 import {
   APP_USERS,
   canViewOwner,
-  defaultPassword,
-  findUserByCredentials,
   findUserById,
   isAdmin,
 } from "./users";
+import { findUserByCredentials } from "./users-auth";
+
+const TEST_PASSWORDS = {
+  Vin: "test-vin-password",
+  MA: "test-ma-password",
+  Miki: "test-miki-password",
+  BABA: "test-baba-password",
+};
+
+process.env.FFIN_PASSWORDS = JSON.stringify(TEST_PASSWORDS);
 
 describe("users", () => {
-  it("uses username + 123 as default password", () => {
-    expect(defaultPassword("Vin")).toBe("Vin123");
-    expect(defaultPassword("MA")).toBe("MA123");
-  });
-
-  it("authenticates all family accounts", () => {
+  it("authenticates configured accounts from FFIN_PASSWORDS", () => {
     for (const user of APP_USERS) {
-      expect(findUserByCredentials(user.username, defaultPassword(user.username))).toEqual(user);
+      expect(
+        findUserByCredentials(user.username, TEST_PASSWORDS[user.username as keyof typeof TEST_PASSWORDS]),
+      ).toEqual(user);
     }
   });
 
-  it("rejects invalid credentials", () => {
+  it("rejects invalid credentials and missing env passwords", () => {
     expect(findUserByCredentials("Vin", "wrong")).toBeNull();
-    expect(findUserByCredentials("unknown", "Vin123")).toBeNull();
+    expect(findUserByCredentials("unknown", TEST_PASSWORDS.Vin)).toBeNull();
+    const previous = process.env.FFIN_PASSWORDS;
+    delete process.env.FFIN_PASSWORDS;
+    expect(findUserByCredentials("Vin", TEST_PASSWORDS.Vin)).toBeNull();
+    process.env.FFIN_PASSWORDS = previous;
   });
 
   it("grants Vin admin access to all owners", () => {

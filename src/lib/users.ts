@@ -16,21 +16,6 @@ export const APP_USERS: AppUser[] = [
   { id: "baba", username: "BABA", name: "BABA", ownerKey: "BABA", role: "MEMBER" },
 ];
 
-export function defaultPassword(username: string): string {
-  return `${username}123`;
-}
-
-export function findUserByCredentials(account: string, password: string): AppUser | null {
-  const normalized = account.trim().toLowerCase();
-  const user = APP_USERS.find(
-    (u) =>
-      u.username.toLowerCase() === normalized ||
-      `${u.username.toLowerCase()}@family.local` === normalized,
-  );
-  if (!user || password !== defaultPassword(user.username)) return null;
-  return user;
-}
-
 export function findUserById(id: string): AppUser | null {
   return APP_USERS.find((u) => u.id === id) ?? null;
 }

@@ -26,11 +26,35 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Publish docs/ onto gh-pages
+        env:
+          FFIN_PASSWORDS: ${{ secrets.FFIN_PASSWORDS }}
         run: |
           set -euo pipefail
           mkdir -p /tmp/ffin-pages
           cp -a docs/. /tmp/ffin-pages/
           touch /tmp/ffin-pages/.nojekyll
+          node <<'NODE'
+          const { createHash } = require("crypto");
+          const fs = require("fs");
+          let hashes = {};
+          try {
+            const parsed = JSON.parse(process.env.FFIN_PASSWORDS || "{}");
+            if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+              for (const [user, password] of Object.entries(parsed)) {
+                if (typeof password === "string" && password.length > 0) {
+                  hashes[user] = createHash("sha256").update(password, "utf8").digest("hex");
+                }
+              }
+            }
+          } catch (err) {
+            console.warn("FFIN_PASSWORDS is missing or invalid; static login stays disabled.");
+          }
+          fs.mkdirSync("/tmp/ffin-pages/assets", { recursive: true });
+          fs.writeFileSync(
+            "/tmp/ffin-pages/assets/auth-config.js",
+            "window.FFIN_PASSWORD_HASHES = " + JSON.stringify(hashes) + ";\n",
+          );
+          NODE
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan pages-publish

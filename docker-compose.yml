@@ -6,5 +6,6 @@ services:
     environment:
       NODE_ENV: production
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env (long random string)}
+      FFIN_PASSWORDS: ${FFIN_PASSWORDS:?Set FFIN_PASSWORDS in .env (JSON username-to-password map)}
       APP_URL: ${APP_URL:-http://localhost:3000}
     restart: unless-stopped
