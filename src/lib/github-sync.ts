@@ -45,16 +45,44 @@ function githubToken(): string | null {
   return readGitHubSyncToken();
 }
 
-export function sharedDataReadUrl(): string {
-  const custom = process.env.NEXT_PUBLIC_SHARED_DATA_URL;
-  if (custom) return custom;
+function appBasePath(): string {
+  return process.env.NEXT_PUBLIC_BASE_PATH || "";
+}
+
+/** Same-origin static file on GitHub Pages — works in China and matches deployed data. */
+export function localSharedDataReadUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  return `${window.location.origin}${appBasePath()}/data/latest.json`;
+}
+
+export function remoteSharedDataReadUrl(): string {
   const [owner, repo] = githubRepo().split("/");
   return `https://raw.githubusercontent.com/${owner}/${repo}/${githubBranch()}/${githubDataPath()}`;
 }
 
-export function sharedLoginLogReadUrl(): string {
+export function sharedDataReadUrl(): string {
+  const custom = process.env.NEXT_PUBLIC_SHARED_DATA_URL;
+  if (custom) return custom;
+  return localSharedDataReadUrl() ?? remoteSharedDataReadUrl();
+}
+
+/** Same-origin static file on GitHub Pages. */
+export function localSharedLoginLogReadUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  return `${window.location.origin}${appBasePath()}/data/login-log.json`;
+}
+
+export function remoteSharedLoginLogReadUrl(): string {
   const [owner, repo] = githubRepo().split("/");
   return `https://raw.githubusercontent.com/${owner}/${repo}/${githubBranch()}/${githubLoginLogPath()}`;
+}
+
+export function sharedLoginLogReadUrl(): string {
+  return localSharedLoginLogReadUrl() ?? remoteSharedLoginLogReadUrl();
+}
+
+function uniqueUrls(...urls: Array<string | null | undefined>): string[] {
+  return [...new Set(urls.filter((url): url is string => Boolean(url)))];
 }
 
 function githubHeaders(token: string): HeadersInit {
@@ -203,15 +231,31 @@ async function writeSharedPayload(payload: SharedDepositPayload, message: string
   return { ok: true };
 }
 
-export async function fetchSharedLoginLog(): Promise<LoginEntry[]> {
+async function fetchTextFromUrl(url: string): Promise<string | null> {
   try {
-    const response = await fetch(`${sharedLoginLogReadUrl()}?t=${Date.now()}`, { cache: "no-store" });
-    if (response.status === 404) return [];
-    if (!response.ok) return [];
-    return parseSharedLoginLogJson(await response.text());
+    const response = await fetch(`${url}?t=${Date.now()}`, { cache: "no-store" });
+    if (response.status === 404) return "";
+    if (!response.ok) return null;
+    return await response.text();
   } catch {
-    return [];
+    return null;
   }
+}
+
+async function fetchLoginLogFromUrl(url: string): Promise<LoginEntry[] | null> {
+  const raw = await fetchTextFromUrl(url);
+  if (raw === null) return null;
+  return parseSharedLoginLogJson(raw);
+}
+
+export async function fetchSharedLoginLog(): Promise<LoginEntry[]> {
+  const urls = uniqueUrls(
+    localSharedLoginLogReadUrl(),
+    remoteSharedLoginLogReadUrl(),
+  );
+  const results = await Promise.all(urls.map(fetchLoginLogFromUrl));
+  const merged = mergeLoginEntries(...results.filter((entries): entries is LoginEntry[] => entries !== null));
+  return merged;
 }
 
 export async function pushSharedLoginLog(entries: LoginEntry[]): Promise<boolean> {
@@ -230,17 +274,34 @@ export async function pushSharedLoginLog(entries: LoginEntry[]): Promise<boolean
   return true;
 }
 
+async function fetchDepositFromUrl(url: string): Promise<DepositStore | null> {
+  const raw = await fetchTextFromUrl(url);
+  if (raw === null) return null;
+  return parseSharedDepositJson(raw);
+}
+
+export function pickNewestDepositStore(stores: Array<DepositStore | null>): DepositStore | null {
+  const candidates = stores.filter((store): store is DepositStore => store !== null);
+  if (candidates.length === 0) return null;
+
+  const withData = candidates.filter(
+    (store) => store.syncedAt && (store.activeItems.length > 0 || store.historyItems.length > 0),
+  );
+  const pool = withData.length > 0 ? withData : candidates;
+
+  return pool.reduce<DepositStore | null>((best, current) => {
+    if (!best) return current;
+    if (!current.syncedAt) return best;
+    if (!best.syncedAt) return current;
+    return current.syncedAt > best.syncedAt ? current : best;
+  }, null);
+}
+
 export async function fetchSharedDepositStore(): Promise<DepositStore | null> {
-  try {
-    const response = await fetch(`${sharedDataReadUrl()}?t=${Date.now()}`, { cache: "no-store" });
-    if (response.status === 404) {
-      return { syncedAt: null, activeItems: [], historyItems: [] };
-    }
-    if (!response.ok) return null;
-    return parseSharedDepositJson(await response.text());
-  } catch {
-    return null;
-  }
+  const custom = process.env.NEXT_PUBLIC_SHARED_DATA_URL;
+  const urls = uniqueUrls(custom, localSharedDataReadUrl(), remoteSharedDataReadUrl());
+  const results = await Promise.all(urls.map(fetchDepositFromUrl));
+  return pickNewestDepositStore(results);
 }
 
 export function getLastGitHubSyncError(): GitHubSyncError | null {

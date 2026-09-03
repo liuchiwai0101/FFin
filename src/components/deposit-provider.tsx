@@ -150,6 +150,14 @@ export function DepositProvider({ children }: { children: ReactNode }) {
       clearUploadedExcelData();
       return;
     }
+    const isEmptyRemote =
+      !normalized.syncedAt &&
+      normalized.activeItems.length === 0 &&
+      normalized.historyItems.length === 0;
+    if (isEmptyRemote) {
+      const local = getClientSnapshot();
+      if (local.syncedAt && !isExcelExpired(local.syncedAt)) return;
+    }
     persistLocal(normalized);
   }, []);
 
