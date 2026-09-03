@@ -2,6 +2,18 @@
   "version": 1,
   "entries": [
     {
+      "loggedAt": "2026-09-03T13:46:34.366Z",
+      "userId": "vin",
+      "username": "Vin",
+      "name": "Vin",
+      "role": "ADMIN",
+      "accountEntered": "Vin",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "language": "en-US",
+      "timezone": "Asia/Hong_Kong",
+      "pageUrl": "https://liuchiwai0101.github.io/FFin/login/"
+    },
+    {
       "loggedAt": "2026-09-03T13:46:21.002Z",
       "userId": "miki",
       "username": "Miki",
