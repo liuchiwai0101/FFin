@@ -425,6 +425,20 @@ table {
   border-radius: 0.75rem;
 }
 
+@media (max-width: 639px) {
+  .projection-table-wrap[data-table-focus="conservative"] .projection-col-target {
+    display: none;
+  }
+
+  .projection-table-wrap[data-table-focus="target"] .projection-col-conservative {
+    display: none;
+  }
+
+  .projection-table-wrap .projection-table {
+    min-width: 0;
+  }
+}
+
 .projection-table {
   width: 100%;
   min-width: 38rem;

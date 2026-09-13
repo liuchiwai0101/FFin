@@ -46,6 +46,7 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
   const [targetRates, setTargetRates] = useState<number[]>(
     Array(6).fill(DEFAULT_TARGET_RATE),
   );
+  const [tableFocus, setTableFocus] = useState<"conservative" | "target">("conservative");
   const [downloading, setDownloading] = useState(false);
 
   const projectionRows = useMemo(
@@ -78,10 +79,13 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
 
   function applyTargetPreset(rate: number) {
     setTargetRates(Array(6).fill(rate));
+    setTableFocus("target");
+    document.getElementById("projection-breakdown")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   function resetConservativeRates() {
     setConservativeRates([...DEFAULT_CONSERVATIVE_RATES]);
+    setTableFocus("conservative");
   }
 
   async function downloadReport() {
@@ -228,20 +232,46 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
       />
 
       <div id="projection-breakdown">
-        <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-          {t("overview.detailedBreakdown")}
-        </h3>
-        <div className="projection-table-wrap">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+            {t("overview.detailedBreakdown")}
+          </h3>
+          <div className="no-export flex gap-1 sm:hidden">
+            <button
+              type="button"
+              className={`px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer ${
+                tableFocus === "conservative"
+                  ? "bg-teal-700 text-white"
+                  : "bg-white border border-slate-200 text-slate-700"
+              }`}
+              onClick={() => setTableFocus("conservative")}
+            >
+              {t("overview.conservative")}
+            </button>
+            <button
+              type="button"
+              className={`px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer ${
+                tableFocus === "target"
+                  ? "bg-emerald-600 text-white"
+                  : "bg-white border border-emerald-200 text-emerald-800"
+              }`}
+              onClick={() => setTableFocus("target")}
+            >
+              {t("overview.targetRate", { rate: (avgTargetRate * 100).toFixed(0) })}
+            </button>
+          </div>
+        </div>
+        <div className="projection-table-wrap" data-table-focus={tableFocus}>
           <table className="projection-table">
             <thead>
               <tr className="bg-slate-50 text-left font-bold uppercase tracking-wide text-slate-500">
                 <th>{t("overview.yearCol")}</th>
-                <th>{t("overview.colConservativeRate")}</th>
-                <th>{t("overview.colConservativeBalance")}</th>
-                <th>{t("overview.colConservativeInterest")}</th>
-                <th>{t("overview.colTargetRate")}</th>
-                <th>{t("overview.colTargetBalance")}</th>
-                <th>{t("overview.colTargetInterest")}</th>
+                <th className="projection-col-conservative">{t("overview.colConservativeRate")}</th>
+                <th className="projection-col-conservative">{t("overview.colConservativeBalance")}</th>
+                <th className="projection-col-conservative">{t("overview.colConservativeInterest")}</th>
+                <th className="projection-col-target">{t("overview.colTargetRate")}</th>
+                <th className="projection-col-target">{t("overview.colTargetBalance")}</th>
+                <th className="projection-col-target">{t("overview.colTargetInterest")}</th>
               </tr>
             </thead>
             <tbody>
@@ -258,38 +288,44 @@ export function ProjectionPlanner({ liveBaseCapital }: ProjectionPlannerProps) {
                       </div>
                     </div>
                   </td>
-                  <td>
+                  <td className="projection-col-conservative">
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       className="rounded border border-slate-200 font-mono text-center"
                       value={rateToPercentInput(row.cRate)}
-                      onChange={(e) => setConservativeRate(idx, e.target.value)}
+                      onChange={(e) => {
+                        setTableFocus("conservative");
+                        setConservativeRate(idx, e.target.value);
+                      }}
                       aria-label={`${t(YEAR_KEYS[idx])} ${t("overview.conservative")}`}
                     />
                   </td>
-                  <td className="font-mono font-semibold text-slate-900 whitespace-nowrap">
+                  <td className="projection-col-conservative font-mono font-semibold text-slate-900 whitespace-nowrap">
                     {formatAmount(row.cBase, "HKD")}
                   </td>
-                  <td className="font-mono font-semibold text-emerald-700 whitespace-nowrap">
+                  <td className="projection-col-conservative font-mono font-semibold text-emerald-700 whitespace-nowrap">
                     +{formatAmount(row.cInterest, "HKD")}
                   </td>
-                  <td>
+                  <td className="projection-col-target">
                     <input
                       type="number"
                       step="0.1"
                       min="0"
                       className="rounded border border-emerald-200 font-mono text-center"
                       value={rateToPercentInput(row.tRate)}
-                      onChange={(e) => setTargetRate(idx, e.target.value)}
+                      onChange={(e) => {
+                        setTableFocus("target");
+                        setTargetRate(idx, e.target.value);
+                      }}
                       aria-label={`${t(YEAR_KEYS[idx])} ${t("overview.target")}`}
                     />
                   </td>
-                  <td className="font-mono font-bold text-slate-900 whitespace-nowrap">
+                  <td className="projection-col-target font-mono font-bold text-slate-900 whitespace-nowrap">
                     {formatAmount(row.tBase, "HKD")}
                   </td>
-                  <td className="font-mono font-bold text-emerald-700 whitespace-nowrap">
+                  <td className="projection-col-target font-mono font-bold text-emerald-700 whitespace-nowrap">
                     +{formatAmount(row.tInterest, "HKD")}
                   </td>
                 </tr>
