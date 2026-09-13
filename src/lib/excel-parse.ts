@@ -1,5 +1,5 @@
 import * as xlsx from "xlsx";
-import { APP_USERS } from "@/lib/users";
+import { APP_USERS, DEMO_OWNER_KEYS } from "@/lib/users";
 
 export interface DepositItem {
   id?: string;
@@ -32,7 +32,7 @@ type ColumnMap = {
   note?: number;
 };
 
-const KNOWN_OWNERS = new Set(APP_USERS.map((user) => user.ownerKey));
+const KNOWN_OWNERS = new Set([...APP_USERS.map((user) => user.ownerKey), ...DEMO_OWNER_KEYS]);
 
 const DEFAULT_ACTIVE_COLUMNS: ColumnMap = {
   owner: 0,

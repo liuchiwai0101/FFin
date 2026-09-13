@@ -66,6 +66,16 @@ export function sharedDataReadUrl(): string {
   return localSharedDataReadUrl() ?? remoteSharedDataReadUrl();
 }
 
+export function localSharedDemoDataReadUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  return `${window.location.origin}${appBasePath()}/data/demo/latest.json`;
+}
+
+export function remoteSharedDemoDataReadUrl(): string {
+  const [owner, repo] = githubRepo().split("/");
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${githubBranch()}/public/data/demo/latest.json`;
+}
+
 /** Same-origin static file on GitHub Pages. */
 export function localSharedLoginLogReadUrl(): string | null {
   if (typeof window === "undefined") return null;
@@ -297,7 +307,12 @@ export function pickNewestDepositStore(stores: Array<DepositStore | null>): Depo
   }, null);
 }
 
-export async function fetchSharedDepositStore(): Promise<DepositStore | null> {
+export async function fetchSharedDepositStore(options?: { demo?: boolean }): Promise<DepositStore | null> {
+  if (options?.demo) {
+    const urls = uniqueUrls(localSharedDemoDataReadUrl(), remoteSharedDemoDataReadUrl());
+    const results = await Promise.all(urls.map(fetchDepositFromUrl));
+    return pickNewestDepositStore(results);
+  }
   const custom = process.env.NEXT_PUBLIC_SHARED_DATA_URL;
   const urls = uniqueUrls(custom, localSharedDataReadUrl(), remoteSharedDataReadUrl());
   const results = await Promise.all(urls.map(fetchDepositFromUrl));

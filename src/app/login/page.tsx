@@ -46,6 +46,7 @@ function LoginForm() {
         <p className="eyebrow">{t("login.eyebrow")}</p>
         <h1>{t("login.title")}</h1>
         <p className="subtitle">{t("login.subtitle")}</p>
+        <p className="form-note text-violet-700">{t("login.demoHint")}</p>
         {error && (
           <p className="error" role="alert">
             {t("login.error")}

@@ -10,8 +10,16 @@ import { findUserByCredentials } from "./users-auth";
 describe("users", () => {
   it("authenticates configured accounts", () => {
     for (const user of APP_USERS) {
+      if (user.id === "demo") continue;
       expect(findUserByCredentials(user.username, `${user.username}123`)).toEqual(user);
     }
+  });
+
+  it("authenticates the demo account", () => {
+    const demo = findUserById("demo");
+    expect(demo).not.toBeNull();
+    expect(findUserByCredentials("demo", "demo123")).toEqual(demo);
+    expect(findUserByCredentials("demo", "demo1234")).toBeNull();
   });
 
   it("rejects invalid credentials", () => {

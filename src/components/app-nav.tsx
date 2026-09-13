@@ -7,7 +7,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { useDepositData } from "@/components/deposit-provider";
 import { useLocale } from "@/lib/i18n/locale-provider";
 import { excelClearAt } from "@/lib/excel-retention";
-import { isAdmin, type AppUser } from "@/lib/users";
+import { isAdmin, isDemoUser, type AppUser } from "@/lib/users";
 
 function formatNavDate(iso: string, locale: "en" | "zh", compact: boolean) {
   const date = new Date(iso);
@@ -26,6 +26,7 @@ export function AppNav({ user }: { user: AppUser }) {
   const { t, locale } = useLocale();
   const { store, ready } = useDepositData();
   const admin = isAdmin(user);
+  const demo = isDemoUser(user);
 
   const links = [
     { label: t("nav.overview"), href: "/app" },
@@ -64,7 +65,12 @@ export function AppNav({ user }: { user: AppUser }) {
           </div>
         </div>
 
-        {syncLabel && <p className="app-topbar-meta">{syncLabel}</p>}
+        {demo && (
+          <p className="app-topbar-meta rounded-md border border-violet-200 bg-violet-50 px-3 py-1.5 text-violet-900">
+            {t("nav.demoMode")}
+          </p>
+        )}
+        {syncLabel && !demo && <p className="app-topbar-meta">{syncLabel}</p>}
 
         <nav className="no-print app-topbar-nav" aria-label="Main">
           {links.map(({ label, href }) => (

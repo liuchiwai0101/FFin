@@ -1,4 +1,4 @@
-import { findUserById, type AppUser } from "@/lib/users";
+import { findUserById, isDemoUser, type AppUser } from "@/lib/users";
 import { findUserByCredentials } from "@/lib/users-auth";
 import { recordLogin } from "@/lib/login-log";
 import { refreshLoginLogFromGitHub, syncLoginLogToGitHub } from "@/lib/login-log-sync";
@@ -14,6 +14,7 @@ export function readSessionUser(): AppUser | null {
 
 export function writeSessionUser(user: AppUser, options?: { accountEntered?: string }) {
   window.localStorage.setItem(AUTH_KEY, user.id);
+  if (isDemoUser(user)) return;
   recordLogin(user, options?.accountEntered ?? user.username);
   void refreshLoginLogFromGitHub().then(() => syncLoginLogToGitHub());
 }

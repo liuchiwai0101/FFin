@@ -36,12 +36,14 @@ jobs:
       - name: Preserve shared deposit data from main
         run: |
           set -euo pipefail
-          mkdir -p out/data
+          mkdir -p out/data/demo
           cp public/data/latest.json out/data/latest.json
           cp public/data/login-log.json out/data/login-log.json
+          cp public/data/demo/latest.json out/data/demo/latest.json
           if git rev-parse --verify origin/main >/dev/null 2>&1; then
             git show origin/main:public/data/latest.json > out/data/latest.json 2>/dev/null || true
             git show origin/main:public/data/login-log.json > out/data/login-log.json 2>/dev/null || true
+            git show origin/main:public/data/demo/latest.json > out/data/demo/latest.json 2>/dev/null || true
           fi
       - name: Publish out/ onto gh-pages
         run: |

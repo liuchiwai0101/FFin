@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState, useSyncExternalStore, useTransition } from "react";
 import { useDepositData } from "@/components/deposit-provider";
+import { useViewer } from "@/components/user-context";
 import { LoginLogTable } from "@/components/login-log-table";
 import { useLocale } from "@/lib/i18n/locale-provider";
 import {
@@ -23,9 +24,12 @@ import {
   subscribeGitHubSyncToken,
   writeGitHubSyncToken,
 } from "@/lib/github-token-storage";
+import { isDemoUser } from "@/lib/users";
 
 export default function SyncPageClient() {
   const router = useRouter();
+  const viewer = useViewer();
+  const demoMode = isDemoUser(viewer);
   const { t } = useLocale();
   const { store, replaceStore, clearStore, ready } = useDepositData();
   const [error, setError] = useState("");
@@ -36,8 +40,9 @@ export default function SyncPageClient() {
   const loginLog = useSyncExternalStore(subscribeLoginLog, readLoginLog, () => []);
 
   useEffect(() => {
+    if (demoMode) return;
     void refreshLoginLogFromGitHub();
-  }, []);
+  }, [demoMode]);
 
   function onSaveToken(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,30 +157,35 @@ export default function SyncPageClient() {
         <span className="text-xs font-bold uppercase tracking-wider text-teal-700">{t("sync.eyebrow")}</span>
         <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">{t("sync.title")}</h1>
         <p className="mt-1 text-sm text-slate-500">{t("sync.desc")}</p>
-        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          {t("sync.deviceNote")}
-        </p>
-        {!tokenReady && (
+        {demoMode ? (
+          <p className="mt-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-900">
+            {t("sync.demoNote")}
+          </p>
+        ) : (
+          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            {t("sync.deviceNote")}
+          </p>
+        )}
+        {!demoMode && !tokenReady && (
           <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-900">
             {t("sync.githubTokenMissing")}
           </p>
         )}
         {ready && store.syncedAt && (
-          <>
-            <p className="mt-2 text-xs text-teal-700 font-semibold">
-              {t("sync.lastLoaded", { date: new Date(store.syncedAt).toLocaleString() })}
-            </p>
-            {excelClearAt(store.syncedAt) && (
-              <p className="mt-1 text-xs text-amber-700 font-semibold">
-                {t("sync.clearAt", {
-                  date: excelClearAt(store.syncedAt)!.toLocaleString(),
-                })}
-              </p>
-            )}
-          </>
+          <p className="mt-2 text-xs text-teal-700 font-semibold">
+            {t("sync.lastLoaded", { date: new Date(store.syncedAt).toLocaleString() })}
+          </p>
+        )}
+        {ready && store.syncedAt && !demoMode && excelClearAt(store.syncedAt) && (
+          <p className="mt-1 text-xs text-amber-700 font-semibold">
+            {t("sync.clearAt", {
+              date: excelClearAt(store.syncedAt)!.toLocaleString(),
+            })}
+          </p>
         )}
       </div>
 
+      {!demoMode && (
       <div className="card p-6 shadow-sm border-slate-200">
         <h2 className="text-base font-bold text-slate-900">{t("sync.githubTokenTitle")}</h2>
         <p className="text-xs text-slate-500 mt-1 mb-4">{t("sync.githubTokenDesc")}</p>
@@ -204,6 +214,7 @@ export default function SyncPageClient() {
           </form>
         )}
       </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="card p-4">
@@ -343,6 +354,7 @@ export default function SyncPageClient() {
         </div>
       </div>
 
+      {!demoMode && (
       <div className="card p-6 shadow-sm border-slate-200">
         <h2 className="text-base font-bold text-slate-900">{t("sync.loginLogTitle")}</h2>
         <p className="text-xs text-slate-500 mt-1">{t("sync.loginLogDesc")}</p>
@@ -380,6 +392,7 @@ export default function SyncPageClient() {
           </>
         )}
       </div>
+      )}
 
       <p className="text-center text-xs text-slate-400">
         <Link href="/app" className="text-teal-700 font-semibold hover:underline">
