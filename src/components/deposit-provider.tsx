@@ -19,9 +19,14 @@ import {
 } from "@/lib/github-sync";
 import { useViewer } from "@/components/user-context";
 import { isExcelExpired, msUntilExcelClear } from "@/lib/excel-retention";
-import { canViewOwner, isAdmin } from "@/lib/users";
+import {
+  DEMO_DEPOSIT_STORAGE_KEY,
+  FAMILY_DEPOSIT_STORAGE_KEY,
+  depositStorageKey,
+} from "@/lib/storage-keys";
+import { canViewOwner, isAdmin, isDemoUser } from "@/lib/users";
 
-const STORAGE_KEY = "ffin_deposit_store_v1";
+let activeStorageKey = FAMILY_DEPOSIT_STORAGE_KEY;
 const SYNC_POLL_MS = 30_000;
 
 const EMPTY: DepositStore = {
@@ -71,11 +76,11 @@ const listeners = new Set<() => void>();
 let cachedJson: string | null | undefined;
 let cachedStore: DepositStore = EMPTY;
 
-function parseStore(raw: string | null): { store: DepositStore; expired: boolean } {
+function parseStore(raw: string | null, skipExpiry = false): { store: DepositStore; expired: boolean } {
   if (!raw) return { store: EMPTY, expired: false };
   try {
     const store = normalizeStore(JSON.parse(raw) as DepositStore);
-    if (isExcelExpired(store.syncedAt)) {
+    if (!skipExpiry && isExcelExpired(store.syncedAt)) {
       return { store: EMPTY, expired: true };
     }
     return { store, expired: false };
@@ -85,11 +90,12 @@ function parseStore(raw: string | null): { store: DepositStore; expired: boolean
 }
 
 function getClientSnapshot(): DepositStore {
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  const raw = window.localStorage.getItem(activeStorageKey);
   if (raw === cachedJson) return cachedStore;
-  const { store, expired } = parseStore(raw);
+  const skipExpiry = activeStorageKey === DEMO_DEPOSIT_STORAGE_KEY;
+  const { store, expired } = parseStore(raw, skipExpiry);
   if (expired) {
-    window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.removeItem(activeStorageKey);
     cachedJson = null;
     cachedStore = EMPTY;
     listeners.forEach((listener) => listener());
@@ -107,7 +113,12 @@ function getServerSnapshot(): DepositStore {
 function subscribe(onStoreChange: () => void) {
   listeners.add(onStoreChange);
   const onStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEY || event.key === null) {
+    if (
+      event.key === activeStorageKey ||
+      event.key === FAMILY_DEPOSIT_STORAGE_KEY ||
+      event.key === DEMO_DEPOSIT_STORAGE_KEY ||
+      event.key === null
+    ) {
       cachedJson = undefined;
       onStoreChange();
     }
@@ -120,15 +131,15 @@ function subscribe(onStoreChange: () => void) {
 }
 
 function persistLocal(store: DepositStore) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  cachedJson = window.localStorage.getItem(STORAGE_KEY);
+  window.localStorage.setItem(activeStorageKey, JSON.stringify(store));
+  cachedJson = window.localStorage.getItem(activeStorageKey);
   cachedStore = store;
   listeners.forEach((listener) => listener());
 }
 
 export function clearUploadedExcelData() {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(STORAGE_KEY);
+  window.localStorage.removeItem(activeStorageKey);
   cachedJson = null;
   cachedStore = EMPTY;
   listeners.forEach((listener) => listener());
@@ -140,13 +151,15 @@ function subscribeNoop() {
 
 export function DepositProvider({ children }: { children: ReactNode }) {
   const viewer = useViewer();
+  const demoMode = isDemoUser(viewer);
+  const storageKey = depositStorageKey(viewer.id);
   const store = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
   const ready = useSyncExternalStore(subscribeNoop, () => true, () => false);
 
   const applyRemoteStore = useCallback((remote: DepositStore | null) => {
     if (!remote) return;
     const normalized = normalizeStore(remote);
-    if (isExcelExpired(normalized.syncedAt)) {
+    if (!demoMode && isExcelExpired(normalized.syncedAt)) {
       clearUploadedExcelData();
       return;
     }
@@ -159,24 +172,33 @@ export function DepositProvider({ children }: { children: ReactNode }) {
       if (local.syncedAt && !isExcelExpired(local.syncedAt)) return;
     }
     persistLocal(normalized);
-  }, []);
+  }, [demoMode]);
 
   const refreshFromServer = useCallback(async () => {
-    const remote = await fetchSharedDepositStore();
+    const remote = await fetchSharedDepositStore({ demo: demoMode });
     applyRemoteStore(remote);
     return remote;
-  }, [applyRemoteStore]);
+  }, [applyRemoteStore, demoMode]);
+
+  useEffect(() => {
+    if (activeStorageKey === storageKey) return;
+    activeStorageKey = storageKey;
+    cachedJson = undefined;
+    listeners.forEach((listener) => listener());
+    void refreshFromServer();
+  }, [storageKey, refreshFromServer]);
 
   useEffect(() => {
     void refreshFromServer();
+    if (demoMode) return;
     const timer = window.setInterval(() => {
       void refreshFromServer();
     }, SYNC_POLL_MS);
     return () => window.clearInterval(timer);
-  }, [refreshFromServer]);
+  }, [refreshFromServer, demoMode]);
 
   useEffect(() => {
-    if (!store.syncedAt || isExcelExpired(store.syncedAt)) return;
+    if (demoMode || !store.syncedAt || isExcelExpired(store.syncedAt)) return;
     const remaining = msUntilExcelClear(store.syncedAt);
     if (remaining === null || remaining <= 0) {
       clearUploadedExcelData();
@@ -188,7 +210,7 @@ export function DepositProvider({ children }: { children: ReactNode }) {
       void refreshFromServer();
     }, remaining);
     return () => window.clearTimeout(timer);
-  }, [store.syncedAt, refreshFromServer]);
+  }, [store.syncedAt, refreshFromServer, demoMode]);
 
   const visibleStore = useMemo<DepositStore>(() => {
     if (isAdmin(viewer)) return store;
@@ -203,6 +225,10 @@ export function DepositProvider({ children }: { children: ReactNode }) {
     async (next: DepositStore) => {
       if (!isAdmin(viewer)) return;
       const normalized = normalizeStore(next);
+      if (demoMode) {
+        persistLocal(normalized);
+        return;
+      }
       const remote = await pushSharedDepositStore({
         activeItems: normalized.activeItems,
         historyItems: normalized.historyItems,
@@ -214,12 +240,12 @@ export function DepositProvider({ children }: { children: ReactNode }) {
       }
       persistLocal(remote ? normalizeStore(remote) : normalized);
     },
-    [viewer],
+    [viewer, demoMode],
   );
 
   const clearStore = useCallback(async () => {
     if (!isAdmin(viewer)) return;
-    if (isGitHubSyncConfigured()) {
+    if (!demoMode && isGitHubSyncConfigured()) {
       const ok = await clearSharedDepositStore();
       if (!ok) {
         const detail = getLastGitHubSyncError();
@@ -229,7 +255,7 @@ export function DepositProvider({ children }: { children: ReactNode }) {
       }
     }
     clearUploadedExcelData();
-  }, [viewer]);
+  }, [viewer, demoMode]);
 
   const upsertRecord = useCallback(
     async (record: DepositItem & { isCurrent: boolean; id?: string }) => {

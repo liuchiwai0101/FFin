@@ -6,6 +6,7 @@ import { SortableTable } from "@/components/sortable-table";
 import { useDepositData } from "@/components/deposit-provider";
 import { useIsAdmin, useViewer } from "@/components/user-context";
 import { useLocale } from "@/lib/i18n/locale-provider";
+import { initOwnerTotals, ownerNamesFromStore } from "@/lib/deposit-owners";
 import { formatRate } from "@/lib/finance";
 
 export default function OverviewPage() {
@@ -70,7 +71,7 @@ export default function OverviewPage() {
   const weightedAvgRate = totalPrincipal > 0 ? weightedRateSum / totalPrincipal : 0;
 
   // Unique Users & Banks
-  const users = admin ? ["MA", "Vin", "Miki", "BABA"] : [viewer.ownerKey];
+  const users = admin ? ownerNamesFromStore(store) : [viewer.ownerKey];
   const banks = ["SC", "HS", "HSBC", "ICBC", "BOC"];
 
   // Normalize bank name for aggregation
@@ -85,12 +86,12 @@ export default function OverviewPage() {
 
   // 1. Bank Distribution Matrix: Bank x User -> Amount
   const bankUserMatrix: Record<string, Record<string, number>> = {};
-  const userTotals: Record<string, number> = { MA: 0, Vin: 0, Miki: 0, BABA: 0 };
-  const userCurrentInterest: Record<string, number> = { MA: 0, Vin: 0, Miki: 0, BABA: 0 };
-  const userHistoryInterest: Record<string, number> = { MA: 0, Vin: 0, Miki: 0, BABA: 0 };
+  const userTotals = initOwnerTotals(users);
+  const userCurrentInterest = initOwnerTotals(users);
+  const userHistoryInterest = initOwnerTotals(users);
 
   banks.forEach((b) => {
-    bankUserMatrix[b] = { MA: 0, Vin: 0, Miki: 0, BABA: 0, total: 0 };
+    bankUserMatrix[b] = { ...initOwnerTotals(users), total: 0 };
   });
 
   activeRecords.forEach((r) => {

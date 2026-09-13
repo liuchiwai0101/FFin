@@ -1,5 +1,10 @@
 import { APP_USERS, type AppUser } from "./users";
 
+function passwordForUser(user: AppUser): string {
+  if (user.id === "demo") return "demo123";
+  return `${user.username}123`;
+}
+
 export function findUserByCredentials(account: string, password: string): AppUser | null {
   const normalized = account.trim().toLowerCase();
   const user = APP_USERS.find(
@@ -7,6 +12,6 @@ export function findUserByCredentials(account: string, password: string): AppUse
       u.username.toLowerCase() === normalized ||
       `${u.username.toLowerCase()}@family.local` === normalized,
   );
-  if (!user || password !== `${user.username}123`) return null;
+  if (!user || password !== passwordForUser(user)) return null;
   return user;
 }

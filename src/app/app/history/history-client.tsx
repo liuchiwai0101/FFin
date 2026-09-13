@@ -12,6 +12,7 @@ import {
   uniqueYearFilters,
 } from "@/lib/deposit-filters";
 import { endedYear } from "@/lib/finance";
+import { ownerNamesFromStore } from "@/lib/deposit-owners";
 import { isAdmin } from "@/lib/users";
 
 export default function HistoryPage() {
@@ -23,7 +24,7 @@ export default function HistoryPage() {
   const bankFilter = params.get("bank") || "All";
   const yearFilter = params.get("year") || "All";
   const searchFilter = (params.get("search") || "").toLowerCase();
-  const { ready, historyRecords, activeRecords, upsertRecord, deleteRecord } = useDepositData();
+  const { ready, store, historyRecords, activeRecords, upsertRecord, deleteRecord } = useDepositData();
 
   const allRecords = [...historyRecords].sort(
     (a, b) => (a.fromDate?.getTime() ?? 0) - (b.fromDate?.getTime() ?? 0),
@@ -56,7 +57,7 @@ export default function HistoryPage() {
       ? filtered.reduce((sum, r) => sum + (r.rate || 0), 0) / filtered.length
       : 0;
 
-  const users = ["All", "MA", "Vin", "Miki", "BABA"];
+  const users = ["All", ...ownerNamesFromStore(store)];
   const banks = uniqueBankFilters(allRecords, userFilter);
   const years = uniqueYearFilters(allRecords, userFilter);
   if (bankFilter !== "All" && !banks.includes(bankFilter)) banks.splice(1, 0, bankFilter);
@@ -335,11 +336,10 @@ export default function HistoryPage() {
         >
           <label>
             {t("current.formMember")}
-            <select name="ownerName" required defaultValue="Vin">
-              <option value="Vin">Vin</option>
-              <option value="MA">MA</option>
-              <option value="Miki">Miki</option>
-              <option value="BABA">BABA</option>
+            <select name="ownerName" required defaultValue={ownerNamesFromStore(store)[0] ?? "Vin"}>
+              {ownerNamesFromStore(store).map((owner) => (
+                <option key={owner} value={owner}>{owner}</option>
+              ))}
             </select>
           </label>
 

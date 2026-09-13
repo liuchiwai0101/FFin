@@ -12,6 +12,7 @@ import {
   uniqueBankFilters,
   uniqueProductTypeFilters,
 } from "@/lib/deposit-filters";
+import { ownerNamesFromStore } from "@/lib/deposit-owners";
 import { isAdmin } from "@/lib/users";
 
 export default function CurrentProductsPage() {
@@ -22,7 +23,7 @@ export default function CurrentProductsPage() {
   const userFilter = admin ? params.get("user") || "All" : viewer.ownerKey;
   const bankFilter = params.get("bank") || "All";
   const typeFilter = params.get("type") || "All";
-  const { ready, activeRecords, upsertRecord, deleteRecord } = useDepositData();
+  const { ready, store, activeRecords, upsertRecord, deleteRecord } = useDepositData();
 
   const allRecords = [...activeRecords].sort((a, b) => {
     const byOwner = a.ownerName.localeCompare(b.ownerName);
@@ -42,7 +43,7 @@ export default function CurrentProductsPage() {
   const totalInterest = filtered.reduce((sum, r) => sum + (r.interest || 0), 0);
   const totalMaturity = filtered.reduce((sum, r) => sum + (r.totalAmount || r.amount), 0);
 
-  const users = ["All", "MA", "Vin", "Miki", "BABA"];
+  const users = ["All", ...ownerNamesFromStore(store)];
   const banks = uniqueBankFilters(allRecords, userFilter);
   const typeLabels: Record<string, string> = {
     TimeDeposit: t("current.typeTimeDeposit"),
@@ -332,11 +333,10 @@ export default function CurrentProductsPage() {
         >
           <label>
             {t("current.formMember")}
-            <select name="ownerName" required defaultValue="Vin">
-              <option value="Vin">Vin</option>
-              <option value="MA">MA</option>
-              <option value="Miki">Miki</option>
-              <option value="BABA">BABA</option>
+            <select name="ownerName" required defaultValue={ownerNamesFromStore(store)[0] ?? "Vin"}>
+              {ownerNamesFromStore(store).map((owner) => (
+                <option key={owner} value={owner}>{owner}</option>
+              ))}
             </select>
           </label>
 

@@ -29,6 +29,7 @@ const en = {
     excelUpdated: "Excel: {date}",
     excelNotLoaded: "No Excel loaded",
     excelClearAt: "Clears: {date}",
+    demoMode: "Demo mode — sample data only. Family accounts and real data are not shown.",
   },
   landing: {
     eyebrow: "Personal & Family Wealth",
@@ -49,6 +50,7 @@ const en = {
     submit: "Sign in",
     error: "That account or password was not recognized.",
     usernamePlaceholder: "Username",
+    demoHint: "Review demo: account demo · password demo123",
   },
   overview: {
     emptyTitle: "No Excel data loaded",
@@ -215,6 +217,8 @@ const en = {
     desc: "Upload Summary.xlsx once — data is saved to GitHub and shared on every device. Clears automatically after 6 hours.",
     deviceNote:
       "Shared file on GitHub main branch. All phones and computers read the same JSON until the 6-hour timer expires.",
+    demoNote:
+      "Demo account uses separate sample data (Alex, Sam, Lily). Uploads stay in this browser only and never sync to the family GitHub file.",
     storedBrowser: "Synced via GitHub",
     lastLoaded: "Last loaded: {date}",
     clearAt: "Auto-clears: {date}",
@@ -307,6 +311,7 @@ const zh = {
     excelUpdated: "Excel：{date}",
     excelNotLoaded: "尚未載入 Excel",
     excelClearAt: "清除：{date}",
+    demoMode: "示範模式 — 僅顯示示範資料，不會載入或影響真實家庭數據。",
   },
   landing: {
     eyebrow: "個人及家庭財富",
@@ -327,6 +332,7 @@ const zh = {
     submit: "登入",
     error: "帳戶或密碼不正確。",
     usernamePlaceholder: "用戶名",
+    demoHint: "示範帳戶：demo · 密碼 demo123",
   },
   overview: {
     emptyTitle: "尚未載入 Excel 數據",
@@ -492,6 +498,7 @@ const zh = {
     title: "上傳及同步 Excel 表",
     desc: "上傳一次 Summary.xlsx，數據保存到 GitHub，所有裝置共享。6 小時後自動清除。",
     deviceNote: "共享檔案在 GitHub main 分支。所有手機和電腦讀取同一份 JSON，直至 6 小時計時結束。",
+    demoNote: "示範帳戶使用獨立示範資料（Alex、Sam、Lily）。上傳只保存在此瀏覽器，不會同步到家庭 GitHub 檔案。",
     storedBrowser: "GitHub 同步",
     lastLoaded: "上次載入：{date}",
     clearAt: "自動清除：{date}",
