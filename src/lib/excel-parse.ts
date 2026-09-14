@@ -34,6 +34,17 @@ type ColumnMap = {
 
 const KNOWN_OWNERS = new Set([...APP_USERS.map((user) => user.ownerKey), ...DEMO_OWNER_KEYS]);
 
+/**
+ * Family Summary.xlsx layout: current holdings sit in fixed row blocks with bank in
+ * column C and amount in column D. Owner names are NOT repeated on each data row.
+ */
+const LEGACY_ACTIVE_SECTIONS: Array<{ owner: string; start: number; end: number }> = [
+  { owner: "MA", start: 2, end: 7 },
+  { owner: "BABA", start: 8, end: 12 },
+  { owner: "Vin", start: 13, end: 23 },
+  { owner: "Miki", start: 28, end: 36 },
+];
+
 const DEFAULT_ACTIVE_COLUMNS: ColumnMap = {
   owner: 0,
   bank: 2,
@@ -113,7 +124,9 @@ function isHeaderRow(row: unknown[]): boolean {
 }
 
 function detectColumnMaps(rows: unknown[][]): { active: ColumnMap; history: ColumnMap } {
-  let active: ColumnMap = { ...DEFAULT_ACTIVE_COLUMNS };
+  // Keep active columns fixed — remapping from a partial header row shifts bank/amount
+  // off columns C/D and drops every current holding.
+  const active: ColumnMap = { ...DEFAULT_ACTIVE_COLUMNS };
   let history: ColumnMap = { ...DEFAULT_HISTORY_COLUMNS };
 
   for (const row of rows) {
@@ -121,8 +134,6 @@ function detectColumnMaps(rows: unknown[][]): { active: ColumnMap; history: Colu
     const map = buildColumnMap(row);
     if (map.id !== undefined) {
       history = { ...DEFAULT_HISTORY_COLUMNS, ...map };
-    } else {
-      active = { ...DEFAULT_ACTIVE_COLUMNS, ...map };
     }
   }
 
@@ -144,18 +155,27 @@ function cellString(row: unknown[], index: number | undefined): string {
   return String(row[index] ?? "").trim();
 }
 
+function parseNumericCell(raw: unknown): number | null {
+  if (raw === null || raw === undefined || raw === "") return null;
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  const text = String(raw)
+    .replace(/,/g, "")
+    .replace(/HK\$/gi, "")
+    .replace(/\$/g, "")
+    .trim();
+  if (!text) return null;
+  const value = Number(text);
+  return Number.isFinite(value) ? value : null;
+}
+
 function cellNumber(row: unknown[], index: number | undefined): number {
   if (index === undefined) return 0;
-  const value = Number(row[index]);
-  return Number.isFinite(value) ? value : 0;
+  return parseNumericCell(row[index]) ?? 0;
 }
 
 function cellOptionalNumber(row: unknown[], index: number | undefined): number | null {
   if (index === undefined) return null;
-  const raw = row[index];
-  if (raw === null || raw === undefined || raw === "") return null;
-  const value = Number(raw);
-  return Number.isFinite(value) ? value : null;
+  return parseNumericCell(row[index]);
 }
 
 function isSkippableBank(bank: string): boolean {
@@ -169,11 +189,25 @@ function looksLikeDepositRow(row: unknown[], columns: ColumnMap): boolean {
   return cellNumber(row, columns.amount) > 0;
 }
 
+function matchKnownOwner(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (KNOWN_OWNERS.has(trimmed)) return trimmed;
+  const lower = trimmed.toLowerCase();
+  for (const owner of KNOWN_OWNERS) {
+    if (owner.toLowerCase() === lower) return owner;
+    if (lower.startsWith(`${owner.toLowerCase()} `) || lower.startsWith(`${owner.toLowerCase()}-`)) {
+      return owner;
+    }
+  }
+  return null;
+}
+
 /** Owner label on a section header row (no deposit data on the same row). */
 function findSectionOwner(row: unknown[]): string | null {
-  for (let i = 0; i <= 1; i++) {
-    const value = cellString(row, i);
-    if (KNOWN_OWNERS.has(value)) return value;
+  for (let i = 0; i <= 3; i++) {
+    const matched = matchKnownOwner(cellString(row, i));
+    if (matched) return matched;
   }
   return null;
 }
@@ -235,18 +269,49 @@ function parseDepositRow(
   };
 }
 
+/** History IDs are numeric only — never treat bank codes / labels as IDs. */
 function isHistoryId(value: unknown): boolean {
   if (value === null || value === undefined || value === "") return false;
   const text = String(value).trim();
   if (!text) return false;
   if (KNOWN_OWNERS.has(text)) return false;
-  if (/^\d+$/.test(text)) return true;
-  return text.length > 0;
+  return /^\d+$/.test(text);
+}
+
+function looksLikeHistoryRow(row: unknown[], history: ColumnMap): boolean {
+  const historyId = row[history.id ?? 0];
+  const ownerFromHistory = matchKnownOwner(cellString(row, history.owner));
+  return isHistoryId(historyId) && ownerFromHistory !== null;
+}
+
+function sheetToRows(sheet: xlsx.WorkSheet): unknown[][] {
+  // Force the read range to start at A1 so legacy active row indexes match Excel
+  // row numbers even when the workbook's stored !ref starts mid-sheet.
+  if (sheet["!ref"]) {
+    const decoded = xlsx.utils.decode_range(sheet["!ref"]);
+    decoded.s.r = 0;
+    decoded.s.c = 0;
+    sheet["!ref"] = xlsx.utils.encode_range(decoded);
+  }
+  return xlsx.utils.sheet_to_json(sheet, { header: 1, blankrows: true, defval: "" });
+}
+
+function parseLegacyActiveSections(rows: unknown[][], history: ColumnMap): DepositItem[] {
+  const items: DepositItem[] = [];
+  for (const section of LEGACY_ACTIVE_SECTIONS) {
+    for (let r = section.start; r <= section.end; r++) {
+      const row = rows[r];
+      if (!row || isHeaderRow(row) || looksLikeHistoryRow(row, history)) continue;
+      const item = parseDepositRow(row, DEFAULT_ACTIVE_COLUMNS, section.owner, true);
+      if (item) items.push(item);
+    }
+  }
+  return items;
 }
 
 export function parseWorkbook(wb: xlsx.WorkBook) {
   const sheet = wb.Sheets["Bank interest"] || wb.Sheets[wb.SheetNames[0]];
-  const rows: unknown[][] = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+  const rows = sheetToRows(sheet);
   const { active, history } = detectColumnMaps(rows);
 
   const activeItems: DepositItem[] = [];
@@ -257,15 +322,15 @@ export function parseWorkbook(wb: xlsx.WorkBook) {
     if (!row || isHeaderRow(row)) continue;
 
     const historyId = row[history.id ?? 0];
-    const ownerFromHistory = cellString(row, history.owner);
-    if (isHistoryId(historyId) && KNOWN_OWNERS.has(ownerFromHistory)) {
+    const ownerFromHistory = matchKnownOwner(cellString(row, history.owner));
+    if (isHistoryId(historyId) && ownerFromHistory) {
       const item = parseDepositRow(row, history, ownerFromHistory, false, historyId);
       if (item) historyItems.push(item);
       continue;
     }
 
-    const ownerFromActive = cellString(row, active.owner);
-    if (KNOWN_OWNERS.has(ownerFromActive) && looksLikeDepositRow(row, active)) {
+    const ownerFromActive = matchKnownOwner(cellString(row, active.owner));
+    if (ownerFromActive && looksLikeDepositRow(row, active)) {
       const item = parseDepositRow(row, active, ownerFromActive, true);
       if (item) {
         activeItems.push(item);
@@ -284,6 +349,11 @@ export function parseWorkbook(wb: xlsx.WorkBook) {
       const item = parseDepositRow(row, active, currentActiveOwner, true);
       if (item) activeItems.push(item);
     }
+  }
+
+  // Summary.xlsx current blocks omit per-row owners; fall back to known row ranges.
+  if (activeItems.length === 0) {
+    activeItems.push(...parseLegacyActiveSections(rows, history));
   }
 
   return { activeItems, historyItems };

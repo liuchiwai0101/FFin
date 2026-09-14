@@ -76,4 +76,25 @@ describe("parseWorkbook", () => {
     expect(parsed.historyItems).toHaveLength(1);
     expect(parsed.historyItems[0]?.ownerName).toBe("MA");
   });
+
+  it("falls back to Summary.xlsx row ranges when active rows have no owner labels", () => {
+    // Mimic the real workbook: empty title rows, deposit rows with bank in col C only,
+    // then a history block with numeric IDs. No "MA"/"Vin" section headers.
+    const rows: unknown[][] = Array.from({ length: 50 }, () => []);
+    rows[2] = ["", "", "SC", 520000, 0.04, 45658, 45749, 3, 525200, 5200];
+    rows[3] = ["", "", "HS", 950000, 0.046, 45689, 45870, 6, 971850, 21850];
+    rows[13] = ["", "", "BOC", 40000, 0.045, 45717, 45900, 6, 40900, 900];
+    rows[28] = ["", "", "HS", 460684, 0.03, 45963, 46146, 6, 467651, 6967];
+    rows[29] = ["", "", "HSBC", 160000, 0.0385, 45628, 46723, 36, 178497, 18497, "Bond"];
+    rows[37] = ["ID", "Member", "Bank", "Amount", "Rate", "From", "To", "Month", "total", "Interest", "Remark"];
+    rows[38] = [1, "MA", "SC", 100000, 0.04, 45300, 45390, 3, 101000, 1000];
+
+    const parsed = parseWorkbook(workbookFromRows(rows));
+
+    expect(parsed.activeItems.filter((item) => item.ownerName === "MA")).toHaveLength(2);
+    expect(parsed.activeItems.filter((item) => item.ownerName === "Vin")).toHaveLength(1);
+    expect(parsed.activeItems.filter((item) => item.ownerName === "Miki")).toHaveLength(2);
+    expect(parsed.activeItems.reduce((sum, item) => sum + item.amount, 0)).toBe(2130684);
+    expect(parsed.historyItems).toHaveLength(1);
+  });
 });
