@@ -163,6 +163,21 @@ function isSkippableBank(bank: string): boolean {
   return normalized === "total" || normalized === "origianl" || normalized === "original";
 }
 
+function looksLikeDepositRow(row: unknown[], columns: ColumnMap): boolean {
+  const bank = cellString(row, columns.bank);
+  if (!bank || isSkippableBank(bank)) return false;
+  return cellNumber(row, columns.amount) > 0;
+}
+
+/** Owner label on a section header row (no deposit data on the same row). */
+function findSectionOwner(row: unknown[]): string | null {
+  for (let i = 0; i <= 1; i++) {
+    const value = cellString(row, i);
+    if (KNOWN_OWNERS.has(value)) return value;
+  }
+  return null;
+}
+
 function productFromNote(productNote: string, rate: number | null): string {
   let product = "Time Deposit (定存)";
   if (productNote.includes("零售債券")) product = "零售債券 (Retail Bond)";
@@ -236,22 +251,38 @@ export function parseWorkbook(wb: xlsx.WorkBook) {
 
   const activeItems: DepositItem[] = [];
   const historyItems: DepositItem[] = [];
+  let currentActiveOwner: string | null = null;
 
   for (const row of rows) {
     if (!row || isHeaderRow(row)) continue;
-
-    const ownerFromActive = cellString(row, active.owner);
-    if (KNOWN_OWNERS.has(ownerFromActive)) {
-      const item = parseDepositRow(row, active, ownerFromActive, true);
-      if (item) activeItems.push(item);
-      continue;
-    }
 
     const historyId = row[history.id ?? 0];
     const ownerFromHistory = cellString(row, history.owner);
     if (isHistoryId(historyId) && KNOWN_OWNERS.has(ownerFromHistory)) {
       const item = parseDepositRow(row, history, ownerFromHistory, false, historyId);
       if (item) historyItems.push(item);
+      continue;
+    }
+
+    const ownerFromActive = cellString(row, active.owner);
+    if (KNOWN_OWNERS.has(ownerFromActive) && looksLikeDepositRow(row, active)) {
+      const item = parseDepositRow(row, active, ownerFromActive, true);
+      if (item) {
+        activeItems.push(item);
+        currentActiveOwner = ownerFromActive;
+      }
+      continue;
+    }
+
+    const sectionOwner = findSectionOwner(row);
+    if (sectionOwner && !looksLikeDepositRow(row, active)) {
+      currentActiveOwner = sectionOwner;
+      continue;
+    }
+
+    if (currentActiveOwner && looksLikeDepositRow(row, active)) {
+      const item = parseDepositRow(row, active, currentActiveOwner, true);
+      if (item) activeItems.push(item);
     }
   }
 
