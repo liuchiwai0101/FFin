@@ -59,6 +59,8 @@ const en = {
     emptyMember:
       "No shared data is loaded yet. Ask an admin (Vin) to upload Summary.xlsx — everyone will see it on all devices.",
     emptyDeviceNote: "Data lives in a shared GitHub JSON file and clears 6 hours after upload.",
+    emptyDemo: "Demo sample data should load automatically. Refresh the page if it is still empty.",
+    emptyDemoNote: "Demo data is permanent sample data and never expires.",
     uploadExcel: "Upload Excel",
     eyebrow: "Portfolio Distribution & Yield",
     title: "Asset Snapshot & Bank Interest Summary",
@@ -341,7 +343,10 @@ const zh = {
     emptyMember:
       "尚未載入共享數據。請聯絡管理員（Vin）上傳 Summary.xlsx，上傳後所有裝置都能看到。",
     emptyDeviceNote: "數據保存在 GitHub 共享檔案中，上傳後 6 小時自動清除。",
+    emptyDemo: "示範樣本數據應會自動載入。若仍為空白請重新整理頁面。",
+    emptyDemoNote: "示範數據為永久樣本，不會過期清除。",
     uploadExcel: "上傳 Excel",
+
     eyebrow: "投資組合分佈與收益",
     title: "資產快照與銀行利息摘要",
     subtitle: "銀行、成員、現有產品及歷史利息收益的即時分佈。",

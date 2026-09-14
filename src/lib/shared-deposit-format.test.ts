@@ -55,4 +55,36 @@ describe("shared-deposit-format", () => {
     );
     expect(store.activeItems).toHaveLength(0);
   });
+
+  it("keeps demo payload forever when expiresAt is far in the future", () => {
+    const syncedAt = new Date(Date.now() - EXCEL_RETENTION_MS * 10).toISOString();
+    const payload = {
+      version: 1 as const,
+      syncedAt,
+      expiresAt: "2099-12-31T23:59:59.000Z",
+      activeItems: [
+        {
+          ownerName: "Alex",
+          bank: "SC",
+          product: "Time Deposit",
+          amount: 500000,
+          rate: 0.028,
+          fromDate: "2026-03-01",
+          toDate: "2027-03-01",
+          months: 12,
+          totalAmount: 514000,
+          interest: 14000,
+          currency: "HKD",
+          isCurrent: true,
+        },
+      ],
+      historyItems: [],
+    };
+
+    expect(isSharedPayloadExpired(payload)).toBe(false);
+    const store = parseSharedDepositJson(serializeSharedPayload(payload));
+    expect(store.activeItems).toHaveLength(1);
+    expect(store.activeItems[0]?.ownerName).toBe("Alex");
+    expect(store.syncedAt).toBe(syncedAt);
+  });
 });

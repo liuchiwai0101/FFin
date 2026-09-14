@@ -60,9 +60,11 @@ export function createEmptySharedPayload(): SharedDepositPayload {
 
 export function isSharedPayloadExpired(payload: SharedDepositPayload, now = Date.now()): boolean {
   if (!payload.syncedAt) return true;
+  // When expiresAt is set (e.g. demo → 2099), it is the sole expiry authority.
+  // Do not also apply the default 6-hour Excel retention window.
   if (payload.expiresAt) {
     const expires = new Date(payload.expiresAt).getTime();
-    if (!Number.isNaN(expires) && now >= expires) return true;
+    if (!Number.isNaN(expires)) return now >= expires;
   }
   return isExcelExpired(payload.syncedAt, now);
 }
