@@ -169,7 +169,8 @@ export function DepositProvider({ children }: { children: ReactNode }) {
       normalized.historyItems.length === 0;
     if (isEmptyRemote) {
       const local = getClientSnapshot();
-      if (local.syncedAt && !isExcelExpired(local.syncedAt)) return;
+      // Demo sample data never expires; keep a healthy local cache if remote is empty.
+      if (local.syncedAt && (demoMode || !isExcelExpired(local.syncedAt))) return;
     }
     persistLocal(normalized);
   }, [demoMode]);

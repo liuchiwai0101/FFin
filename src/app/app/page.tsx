@@ -5,6 +5,7 @@ import { ProjectionPlanner } from "@/components/projection-planner";
 import { SortableTable } from "@/components/sortable-table";
 import { useDepositData } from "@/components/deposit-provider";
 import { useIsAdmin, useViewer } from "@/components/user-context";
+import { isDemoUser } from "@/lib/users";
 import { useLocale } from "@/lib/i18n/locale-provider";
 import { initOwnerTotals, ownerNamesFromStore } from "@/lib/deposit-owners";
 import { formatRate } from "@/lib/finance";
@@ -23,17 +24,29 @@ export default function OverviewPage() {
     return <div className="card p-6 text-sm text-slate-500">{t("common.loadingDashboard")}</div>;
   }
 
+  const demoMode = isDemoUser(viewer);
+
   if (!store.activeItems.length && !store.historyItems.length) {
     return (
       <div className="card p-8 max-w-xl space-y-3">
         <h1 className="text-2xl font-bold text-slate-900">{t("overview.emptyTitle")}</h1>
         <p className="text-sm text-slate-600">
-          {admin ? t("overview.emptyAdmin") : t("overview.emptyMember")}
+          {demoMode
+            ? t("overview.emptyDemo")
+            : admin
+              ? t("overview.emptyAdmin")
+              : t("overview.emptyMember")}
         </p>
-        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          {t("overview.emptyDeviceNote")}
+        <p
+          className={`text-xs rounded-lg px-3 py-2 border ${
+            demoMode
+              ? "text-violet-900 bg-violet-50 border-violet-200"
+              : "text-amber-800 bg-amber-50 border-amber-200"
+          }`}
+        >
+          {demoMode ? t("overview.emptyDemoNote") : t("overview.emptyDeviceNote")}
         </p>
-        {admin && (
+        {!demoMode && admin && (
           <Link className="button inline-flex" href="/app/sync">
             {t("overview.uploadExcel")}
           </Link>
