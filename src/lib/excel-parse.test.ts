@@ -52,4 +52,28 @@ describe("parseWorkbook", () => {
     expect(parsed.activeItems).toHaveLength(1);
     expect(parsed.activeItems[0]?.amount).toBe(460684);
   });
+
+  it("parses active rows from owner section headers without per-row owner names", () => {
+    const rows = [
+      ["Member", "", "Bank", "Amount", "Rate", "From", "To", "Month", "total", "Interest", "Note"],
+      ["MA"],
+      ["", "", "SC", 520000, 0.04, "2025-01-01", "2025-04-01", 3, 525200, 5200],
+      ["", "", "HS", 950000, 0.046, "2025-02-01", "2025-08-01", 6, 971850, 21850],
+      ["Vin"],
+      ["", "", "BOC", 40000, 0.045, "2025-03-01", "2025-09-01", 6, 40900, 900],
+      ["ID", "Member", "Bank", "Amount", "Rate", "From", "To", "Month", "total", "Interest", "Remark"],
+      [1, "MA", "SC", 520000, 0.04, "2024-02-03", "2024-05-03", 3, 525200, 5114],
+    ];
+
+    const parsed = parseWorkbook(workbookFromRows(rows));
+    const maActive = parsed.activeItems.filter((item) => item.ownerName === "MA");
+    const vinActive = parsed.activeItems.filter((item) => item.ownerName === "Vin");
+
+    expect(maActive).toHaveLength(2);
+    expect(maActive.reduce((sum, item) => sum + item.amount, 0)).toBe(1470000);
+    expect(vinActive).toHaveLength(1);
+    expect(vinActive[0]?.amount).toBe(40000);
+    expect(parsed.historyItems).toHaveLength(1);
+    expect(parsed.historyItems[0]?.ownerName).toBe("MA");
+  });
 });
