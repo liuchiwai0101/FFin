@@ -25,6 +25,12 @@ import {
   depositStorageKey,
 } from "@/lib/storage-keys";
 import { canViewOwner, isAdmin, isDemoUser } from "@/lib/users";
+import {
+  USD_TO_HKD_RATE,
+  convertUsdToHkd,
+  isUsdLabeled,
+  stripUsdBankMarker,
+} from "@/lib/finance";
 
 let activeStorageKey = FAMILY_DEPOSIT_STORAGE_KEY;
 const SYNC_POLL_MS = 30_000;
@@ -55,6 +61,27 @@ function withIds(items: DepositItem[], prefix: string): DepositItem[] {
   }));
 }
 
+function appendNote(base: string | null | undefined, extra: string): string {
+  const existing = (base ?? "").trim();
+  return existing ? `${existing} · ${extra}` : extra;
+}
+
+/** Convert legacy synced USD rows (e.g. bank `SC(USD)`) into HKD amounts. */
+function ensureHkdAmounts(item: DepositItem): DepositItem {
+  if (!isUsdLabeled(item.bank, item.currency)) return item;
+
+  const usdAmount = item.amount;
+  return {
+    ...item,
+    amount: convertUsdToHkd(item.amount),
+    totalAmount: convertUsdToHkd(item.totalAmount),
+    interest: convertUsdToHkd(item.interest),
+    currency: "HKD",
+    bank: stripUsdBankMarker(item.bank),
+    notes: appendNote(item.notes, `USD ${usdAmount.toLocaleString("en-US")} × ${USD_TO_HKD_RATE}`),
+  };
+}
+
 function toRecord(item: DepositItem, fallbackId: string): DepositRecord {
   return {
     ...item,
@@ -67,8 +94,8 @@ function toRecord(item: DepositItem, fallbackId: string): DepositRecord {
 function normalizeStore(raw: DepositStore): DepositStore {
   return {
     syncedAt: raw.syncedAt ?? null,
-    activeItems: withIds(raw.activeItems ?? [], "active"),
-    historyItems: withIds(raw.historyItems ?? [], "history"),
+    activeItems: withIds((raw.activeItems ?? []).map(ensureHkdAmounts), "active"),
+    historyItems: withIds((raw.historyItems ?? []).map(ensureHkdAmounts), "history"),
   };
 }
 

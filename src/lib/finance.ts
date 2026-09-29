@@ -1,5 +1,28 @@
 import type { Locale } from "@/lib/i18n/messages";
 
+/** Fixed FX used when Excel marks a deposit as USD (e.g. bank `SC(USD)`). */
+export const USD_TO_HKD_RATE = 7.78;
+
+export function isUsdLabeled(bank: string, currency?: string | null): boolean {
+  if (currency === "USD") return true;
+  return /USD/i.test(bank) || /US\$/i.test(bank);
+}
+
+/** Strip currency markers like `(USD)` from bank labels after converting to HKD. */
+export function stripUsdBankMarker(bank: string): string {
+  const cleaned = bank
+    .replace(/\s*\(\s*USD\s*\)/gi, "")
+    .replace(/\s*\（\s*USD\s*\）/gi, "")
+    .replace(/\s+USD\b/gi, "")
+    .replace(/\s+US\$/gi, "")
+    .trim();
+  return cleaned || bank;
+}
+
+export function convertUsdToHkd(amount: number, rate = USD_TO_HKD_RATE): number {
+  return amount * rate;
+}
+
 function intlLocale(locale?: Locale) {
   return locale === "zh" ? "zh-HK" : "en-US";
 }
