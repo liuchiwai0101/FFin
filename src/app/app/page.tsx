@@ -345,12 +345,17 @@ export default function OverviewPage() {
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className={`overflow-x-auto${!showMemberColumns ? " max-w-xl" : ""}`}>
           <SortableTable
+            className={!showMemberColumns ? "compact-matrix" : undefined}
             defaultSortKey="total"
             defaultSortDir="desc"
             columns={[
-              { key: "bank", label: t("overview.bank"), className: "w-40" },
+              {
+                key: "bank",
+                label: t("overview.bank"),
+                className: showMemberColumns ? "w-40" : "whitespace-nowrap",
+              },
               ...(showMemberColumns
                 ? memberCols.map((u) => ({
                     key: u,
@@ -362,13 +367,17 @@ export default function OverviewPage() {
               {
                 key: "total",
                 label: t("overview.totalPrincipal"),
-                className: "text-right font-bold text-slate-900 bg-slate-100/70",
+                className: showMemberColumns
+                  ? "text-right font-bold text-slate-900 bg-slate-100/70"
+                  : "text-right font-bold text-slate-900 bg-slate-100/70 whitespace-nowrap",
                 type: "number",
               },
               {
                 key: "pct",
                 label: t("overview.pctShare"),
-                className: "text-right w-20 font-bold text-slate-900",
+                className: showMemberColumns
+                  ? "text-right w-20 font-bold text-slate-900"
+                  : "text-right font-bold text-slate-900 whitespace-nowrap",
                 type: "number",
               },
             ]}
