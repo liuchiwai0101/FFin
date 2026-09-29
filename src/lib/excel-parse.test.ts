@@ -97,4 +97,34 @@ describe("parseWorkbook", () => {
     expect(parsed.activeItems.reduce((sum, item) => sum + item.amount, 0)).toBe(2130684);
     expect(parsed.historyItems).toHaveLength(1);
   });
+
+  it("converts SC(USD) amounts to HKD at the fixed 7.78 rate", () => {
+    const rows = [
+      ["Member", "", "Bank", "Amount", "Rate", "From", "To", "Month", "total", "Interest", "Note"],
+      ["Miki", "", "HS", 460684, 0.03, "2026-08-29", "2027-03-01", 6, 467651, 6967],
+      ["Miki", "", "MA HSBC", 160000, 0.0385, "2025-09-28", "2028-10-10", 36, 178699, 18699, "銀債"],
+      ["Miki", "", "SC", 65385, 0.033, "2026-09-28", "2027-09-28", 12, 67543, 2158],
+      ["Miki", "", "SC(USD)", 20000, 0.037, "2026-09-28", "2027-03-30", 6, 20371, 371, "HKD:157508"],
+    ];
+
+    const parsed = parseWorkbook(workbookFromRows(rows));
+    const miki = parsed.activeItems.filter((item) => item.ownerName === "Miki");
+    const usdConverted = miki.find((item) => item.notes?.includes("USD 20,000"));
+    const scHkd = miki.filter((item) => item.bank === "SC");
+
+    expect(usdConverted).toBeTruthy();
+    expect(usdConverted?.bank).toBe("SC");
+    expect(usdConverted?.currency).toBe("HKD");
+    expect(usdConverted?.amount).toBeCloseTo(155600, 0);
+    expect(usdConverted?.interest).toBeCloseTo(371 * 7.78, 0);
+    expect(usdConverted?.totalAmount).toBeCloseTo(20371 * 7.78, 0);
+
+    // SC HKD row + converted USD row both roll into SC for bank matrix totals.
+    expect(scHkd).toHaveLength(2);
+    expect(scHkd.reduce((sum, item) => sum + item.amount, 0)).toBeCloseTo(65385 + 155600, 0);
+    expect(miki.reduce((sum, item) => sum + item.amount, 0)).toBeCloseTo(
+      460684 + 160000 + 65385 + 155600,
+      0,
+    );
+  });
 });

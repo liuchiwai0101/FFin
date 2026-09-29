@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { endedYear, monthStart, toMinorUnits } from "./finance";
+import {
+  USD_TO_HKD_RATE,
+  convertUsdToHkd,
+  endedYear,
+  isUsdLabeled,
+  monthStart,
+  stripUsdBankMarker,
+  toMinorUnits,
+} from "./finance";
 
 describe("money utilities", () => {
   it("stores decimals as integer minor units", () => {
@@ -9,6 +17,25 @@ describe("money utilities", () => {
 
   it("returns the first day of the UTC month", () => {
     expect(monthStart(new Date("2026-08-24T12:00:00Z")).toISOString()).toBe("2026-08-01T00:00:00.000Z");
+  });
+});
+
+describe("USD to HKD conversion", () => {
+  it("detects USD labels on bank names and currency", () => {
+    expect(isUsdLabeled("SC(USD)")).toBe(true);
+    expect(isUsdLabeled("SC USD")).toBe(true);
+    expect(isUsdLabeled("SC", "USD")).toBe(true);
+    expect(isUsdLabeled("SC", "HKD")).toBe(false);
+  });
+
+  it("strips USD markers from bank names", () => {
+    expect(stripUsdBankMarker("SC(USD)")).toBe("SC");
+    expect(stripUsdBankMarker("SC USD")).toBe("SC");
+  });
+
+  it("converts at the fixed 7.78 rate", () => {
+    expect(USD_TO_HKD_RATE).toBe(7.78);
+    expect(convertUsdToHkd(20000)).toBeCloseTo(155600, 0);
   });
 });
 

@@ -1,4 +1,10 @@
 import * as xlsx from "xlsx";
+import {
+  USD_TO_HKD_RATE,
+  convertUsdToHkd,
+  isUsdLabeled,
+  stripUsdBankMarker,
+} from "@/lib/finance";
 import { APP_USERS, DEMO_OWNER_KEYS } from "@/lib/users";
 
 export interface DepositItem {
@@ -224,6 +230,11 @@ function productFromNote(productNote: string, rate: number | null): string {
   return product;
 }
 
+function appendNote(base: string | null | undefined, extra: string): string {
+  const existing = (base ?? "").trim();
+  return existing ? `${existing} · ${extra}` : extra;
+}
+
 function parseDepositRow(
   row: unknown[],
   columns: ColumnMap,
@@ -231,10 +242,10 @@ function parseDepositRow(
   isCurrent: boolean,
   historyId?: unknown,
 ): DepositItem | null {
-  const bank = cellString(row, columns.bank);
+  let bank = cellString(row, columns.bank);
   if (!bank || isSkippableBank(bank)) return null;
 
-  const amount = cellNumber(row, columns.amount);
+  let amount = cellNumber(row, columns.amount);
   if (amount <= 0) return null;
 
   const rateRaw = cellOptionalNumber(row, columns.rate);
@@ -242,11 +253,29 @@ function parseDepositRow(
   const fromDate = excelDateToDate(row[columns.fromDate ?? -1]);
   const toDate = excelDateToDate(row[columns.toDate ?? -1]);
   const months = cellOptionalNumber(row, columns.months);
-  const totalAmount = cellOptionalNumber(row, columns.totalAmount) ?? amount;
-  const interest =
+  let totalAmount = cellOptionalNumber(row, columns.totalAmount) ?? amount;
+  let interest =
     cellOptionalNumber(row, columns.interest) ?? Math.max(0, totalAmount - amount);
   const productNote = cellString(row, columns.note);
   const product = productFromNote(productNote, rate);
+
+  let currency: string = isCurrent && productNote.includes("RMB") ? "RMB" : "HKD";
+  let notes: string | null = isCurrent
+    ? productNote || null
+    : productNote
+      ? `ID: ${historyId} · ${productNote}`
+      : `ID: ${historyId}`;
+
+  // Excel rows like `SC(USD)` store principal in USD — convert to HKD at the fixed rate.
+  if (isUsdLabeled(bank)) {
+    const usdAmount = amount;
+    amount = convertUsdToHkd(amount);
+    totalAmount = convertUsdToHkd(totalAmount);
+    interest = convertUsdToHkd(interest);
+    currency = "HKD";
+    bank = stripUsdBankMarker(bank);
+    notes = appendNote(notes, `USD ${usdAmount.toLocaleString("en-US")} × ${USD_TO_HKD_RATE}`);
+  }
 
   return {
     ownerName,
@@ -259,13 +288,9 @@ function parseDepositRow(
     months,
     totalAmount,
     interest,
-    currency: isCurrent && productNote.includes("RMB") ? "RMB" : "HKD",
+    currency,
     isCurrent,
-    notes: isCurrent
-      ? productNote || null
-      : productNote
-        ? `ID: ${historyId} · ${productNote}`
-        : `ID: ${historyId}`,
+    notes,
   };
 }
 
