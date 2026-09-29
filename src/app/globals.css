@@ -403,7 +403,7 @@ table {
   border-collapse: collapse;
 }
 
-/* Compact 3-column matrices (e.g. member bank snapshot) — avoid a huge empty gap. */
+/* Compact matrices for individual users — shrink to content, tight column gaps. */
 table.compact-matrix {
   width: auto;
   max-width: 100%;
@@ -413,16 +413,60 @@ table.compact-matrix th,
 table.compact-matrix td {
   width: auto;
   white-space: nowrap;
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
 }
 
 table.compact-matrix th:first-child,
 table.compact-matrix td:first-child {
-  padding-right: 2rem;
+  padding-right: 1rem;
 }
 
 table.compact-matrix th:not(:first-child),
 table.compact-matrix td:not(:first-child) {
-  padding-left: 1.25rem;
+  padding-left: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  table.compact-matrix th,
+  table.compact-matrix td {
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+  }
+
+  table.compact-matrix th:first-child,
+  table.compact-matrix td:first-child {
+    padding-right: 1.15rem;
+  }
+
+  table.compact-matrix th:not(:first-child),
+  table.compact-matrix td:not(:first-child) {
+    padding-left: 1rem;
+  }
+}
+
+/* Product mix cards — dense tiles that don't stretch across empty width. */
+.product-mix-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.product-mix-grid > * {
+  flex: 1 1 11rem;
+  max-width: 15.5rem;
+  min-width: min(100%, 10.5rem);
+}
+
+@media (min-width: 768px) {
+  .product-mix-grid {
+    gap: 0.75rem;
+  }
+
+  .product-mix-grid > * {
+    flex-basis: 12rem;
+    max-width: 16rem;
+  }
 }
 
 @media (min-width: 640px) {
