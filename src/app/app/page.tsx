@@ -280,9 +280,11 @@ export default function OverviewPage() {
         </section>
       )}
 
-      {/* Bank distribution — for members also show expected interest so we can skip a second interest table */}
-      <section className="card shadow-sm overflow-hidden">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      {/* Bank distribution — shrink-wrap for individuals; full-width for admin matrices */}
+      <section
+        className={`card shadow-sm overflow-hidden${!showMemberColumns ? " w-fit max-w-full" : ""}`}
+      >
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-base font-bold text-slate-900">{t("overview.bankMatrixTitle")}</h2>
             <p className="text-xs text-slate-500">
@@ -294,7 +296,7 @@ export default function OverviewPage() {
           </Link>
         </div>
 
-        <div className={`overflow-x-auto${!showMemberColumns ? " max-w-2xl" : ""}`}>
+        <div className="overflow-x-auto">
           <SortableTable
             className={!showMemberColumns ? "compact-matrix" : undefined}
             defaultSortKey="total"
@@ -414,7 +416,7 @@ export default function OverviewPage() {
       {/* Admin only: interest by member × bank (not repeated on member cards) */}
       {multiMember && (
         <section className="card shadow-sm overflow-hidden">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-base font-bold text-slate-900">{t("overview.interestMatrixTitle")}</h2>
               <p className="text-xs text-slate-500">{t("overview.interestMatrixDesc")}</p>
@@ -493,40 +495,44 @@ export default function OverviewPage() {
         </section>
       )}
 
-      {/* Product mix — allocation cut, not a repeat of bank totals */}
-      <section className="card shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-base font-bold text-slate-900">{t("overview.productTypesTitle")}</h2>
-          <p className="text-xs text-slate-500">{t("overview.productTypesDesc")}</p>
-        </div>
-        <div className="fit-card-grid">
-          {productEntries.map(([name, data]) => {
-            const pct = totalPrincipal > 0 ? (data.amount / totalPrincipal) * 100 : 0;
-            return (
-              <div
-                key={name}
-                className="border border-slate-200/80 rounded-lg p-3.5 bg-slate-50/50 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-1 gap-2">
-                    <span className="font-bold text-slate-900 truncate">{name}</span>
-                    <span className="badge text-[10px] font-mono font-bold">{pct.toFixed(1)}%</span>
+      {/* Product mix — hide when only one type (duplicates bank grand totals) */}
+      {productEntries.length > 1 && (
+        <section className={`card shadow-sm${!showMemberColumns ? " w-fit max-w-full" : ""}`}>
+          <div className="mb-3">
+            <h2 className="text-base font-bold text-slate-900">{t("overview.productTypesTitle")}</h2>
+            <p className="text-xs text-slate-500">{t("overview.productTypesDesc")}</p>
+          </div>
+          <div className="product-mix-grid">
+            {productEntries.map(([name, data]) => {
+              const pct = totalPrincipal > 0 ? (data.amount / totalPrincipal) * 100 : 0;
+              return (
+                <div
+                  key={name}
+                  className="border border-slate-200/80 rounded-lg p-3 bg-slate-50/50 flex flex-col justify-between min-w-0"
+                >
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-1 gap-2">
+                      <span className="font-bold text-slate-900 truncate">{name}</span>
+                      <span className="badge text-[10px] font-mono font-bold shrink-0">
+                        {pct.toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="font-mono font-black text-slate-950 text-sm mt-1">
+                      {formatAmount(data.amount, "HKD")}
+                    </p>
                   </div>
-                  <p className="font-mono font-black text-slate-950 text-base mt-1">
-                    {formatAmount(data.amount, "HKD")}
-                  </p>
+                  <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                    <span>{t("overview.items", { count: data.count })}</span>
+                    <span className="text-emerald-700 font-semibold font-mono whitespace-nowrap">
+                      +{formatAmount(data.interest, "HKD")}
+                    </span>
+                  </div>
                 </div>
-                <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
-                  <span>{t("overview.items", { count: data.count })}</span>
-                  <span className="text-emerald-700 font-semibold font-mono">
-                    +{formatAmount(data.interest, "HKD")}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <ProjectionPlanner liveBaseCapital={userPrincipal} />
     </div>
