@@ -280,142 +280,185 @@ export default function OverviewPage() {
         </section>
       )}
 
-      {/* Bank distribution — shrink-wrap for individuals; full-width for admin matrices */}
-      <section
-        className={`card shadow-sm overflow-hidden${!showMemberColumns ? " w-max max-w-full" : ""}`}
-      >
-        <div
-          className={`mb-3 flex flex-wrap gap-2${!showMemberColumns ? " items-start" : " items-center justify-between"}`}
-        >
-          <div className={!showMemberColumns ? "max-w-[22rem]" : undefined}>
+      {/* Bank distribution — individuals: banks as column headers; admin: banks as rows */}
+      <section className="card shadow-sm overflow-hidden">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
             <h2 className="text-base font-bold text-slate-900">{t("overview.bankMatrixTitle")}</h2>
             <p className="text-xs text-slate-500 leading-snug">
               {multiMember ? t("overview.bankMatrixDescAdmin") : t("overview.bankMatrixDescMember")}
             </p>
           </div>
-          <Link
-            className={`text-xs font-semibold text-teal-700 hover:underline${!showMemberColumns ? " shrink-0 pt-0.5" : ""}`}
-            href="/app/current"
-          >
+          <Link className="text-xs font-semibold text-teal-700 hover:underline" href="/app/current">
             {t("overview.viewDetails")}
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
-          <SortableTable
-            className={!showMemberColumns ? "compact-matrix" : undefined}
-            defaultSortKey="total"
-            defaultSortDir="desc"
-            columns={[
-              {
-                key: "bank",
-                label: t("overview.bank"),
-                className: showMemberColumns ? "w-36" : "whitespace-nowrap",
-              },
-              ...(showMemberColumns
-                ? memberCols.map((u) => ({
-                    key: u,
-                    label: u,
-                    className: "text-right",
-                    type: "number" as const,
-                  }))
-                : []),
-              {
-                key: "total",
-                label: t("overview.totalPrincipal"),
-                className: "text-right font-bold text-slate-900 bg-slate-100/70 whitespace-nowrap",
-                type: "number",
-              },
-              {
-                key: "pct",
-                label: t("overview.pctShare"),
-                className: "text-right font-bold text-slate-900 whitespace-nowrap",
-                type: "number",
-              },
-              ...(!multiMember
-                ? [
-                    {
-                      key: "interest",
-                      label: t("overview.expectedInterest"),
-                      className: "text-right font-bold text-emerald-800 whitespace-nowrap",
-                      type: "number" as const,
-                    },
-                  ]
-                : []),
-            ]}
-            rows={activeBanks.map((b) => {
-              const row = bankUserMatrix[b];
-              const pct = totalPrincipal > 0 ? (row.total / totalPrincipal) * 100 : 0;
-              const interest = bankActiveInterest[b] || 0;
-              return {
-                id: b,
-                values: {
-                  bank: b,
-                  ...Object.fromEntries(memberCols.map((u) => [u, row[u] || 0])),
-                  total: row.total,
-                  pct,
-                  interest,
+        {!showMemberColumns ? (
+          <div className="overflow-x-auto">
+            <table className="bank-header-matrix">
+              <thead>
+                <tr>
+                  <th className="text-left font-semibold text-slate-500 whitespace-nowrap">
+                    {t("overview.metric")}
+                  </th>
+                  {activeBanks.map((b) => (
+                    <th key={b} className="text-right whitespace-nowrap">
+                      <span className="inline-flex items-center justify-end gap-1.5">
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 text-[10px] font-black font-mono">
+                          {b}
+                        </span>
+                        <span className="text-xs font-bold text-slate-900">{bankLabel(b)}</span>
+                      </span>
+                    </th>
+                  ))}
+                  <th className="text-right font-bold text-slate-900 bg-slate-100/70 whitespace-nowrap">
+                    {t("overview.grandTotal")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="font-semibold text-slate-600 whitespace-nowrap">
+                    {t("overview.totalPrincipal")}
+                  </td>
+                  {activeBanks.map((b) => (
+                    <td
+                      key={b}
+                      className="text-right font-bold text-slate-950 font-mono text-xs whitespace-nowrap"
+                    >
+                      {formatAmount(bankUserMatrix[b].total, "HKD")}
+                    </td>
+                  ))}
+                  <td className="text-right font-black text-teal-950 font-mono text-xs bg-teal-50 whitespace-nowrap">
+                    {formatAmount(totalPrincipal, "HKD")}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="font-semibold text-slate-600 whitespace-nowrap">
+                    {t("overview.pctShare")}
+                  </td>
+                  {activeBanks.map((b) => {
+                    const pct =
+                      totalPrincipal > 0 ? (bankUserMatrix[b].total / totalPrincipal) * 100 : 0;
+                    return (
+                      <td key={b} className="text-right text-xs whitespace-nowrap">
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-teal-50 text-teal-800 font-semibold">
+                          {pct.toFixed(1)}%
+                        </span>
+                      </td>
+                    );
+                  })}
+                  <td className="text-right text-xs font-semibold text-slate-700 bg-slate-50 whitespace-nowrap">
+                    100.0%
+                  </td>
+                </tr>
+                <tr>
+                  <td className="font-semibold text-slate-600 whitespace-nowrap">
+                    {t("overview.expectedInterest")}
+                  </td>
+                  {activeBanks.map((b) => {
+                    const interest = bankActiveInterest[b] || 0;
+                    return (
+                      <td
+                        key={b}
+                        className="text-right font-semibold text-emerald-700 font-mono text-xs whitespace-nowrap"
+                      >
+                        {interest > 0 ? `+${formatAmount(interest, "HKD")}` : "—"}
+                      </td>
+                    );
+                  })}
+                  <td className="text-right font-black text-emerald-800 font-mono text-xs bg-emerald-50/60 whitespace-nowrap">
+                    +{formatAmount(totalActiveInterest, "HKD")}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <SortableTable
+              defaultSortKey="total"
+              defaultSortDir="desc"
+              columns={[
+                {
+                  key: "bank",
+                  label: t("overview.bank"),
+                  className: "w-36",
                 },
-                cells: [
-                  <td key="bank" className="font-bold text-slate-900 whitespace-nowrap">
-                    <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 text-xs font-black mr-2 font-mono">
-                      {b}
-                    </span>
-                    <span className="text-xs text-slate-700">{bankLabel(b)}</span>
-                  </td>,
-                  ...(showMemberColumns
-                    ? memberCols.map((u) => (
-                        <td key={u} className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                          {(row[u] || 0) > 0 ? formatAmount(row[u], "HKD") : "—"}
-                        </td>
-                      ))
-                    : []),
-                  <td
-                    key="total"
-                    className="text-right font-bold text-slate-950 font-mono text-xs bg-slate-50 whitespace-nowrap"
-                  >
-                    {formatAmount(row.total, "HKD")}
-                  </td>,
-                  <td key="pct" className="text-right font-semibold text-slate-600 text-xs whitespace-nowrap">
-                    <span className="inline-block px-1.5 py-0.5 rounded bg-teal-50 text-teal-800">
-                      {pct.toFixed(1)}%
-                    </span>
-                  </td>,
-                  ...(!multiMember
-                    ? [
-                        <td
-                          key="interest"
-                          className="text-right font-semibold text-emerald-700 font-mono text-xs whitespace-nowrap"
-                        >
-                          {interest > 0 ? `+${formatAmount(interest, "HKD")}` : "—"}
-                        </td>,
-                      ]
-                    : []),
-                ],
-              };
-            })}
-            footer={
-              <tr className="bg-slate-100 font-black text-slate-950 border-t-2 border-slate-300">
-                <td>{t("overview.grandTotal")}</td>
-                {showMemberColumns &&
-                  memberCols.map((u) => (
+                ...memberCols.map((u) => ({
+                  key: u,
+                  label: u,
+                  className: "text-right",
+                  type: "number" as const,
+                })),
+                {
+                  key: "total",
+                  label: t("overview.totalPrincipal"),
+                  className: "text-right font-bold text-slate-900 bg-slate-100/70 whitespace-nowrap",
+                  type: "number",
+                },
+                {
+                  key: "pct",
+                  label: t("overview.pctShare"),
+                  className: "text-right font-bold text-slate-900 whitespace-nowrap",
+                  type: "number",
+                },
+              ]}
+              rows={activeBanks.map((b) => {
+                const row = bankUserMatrix[b];
+                const pct = totalPrincipal > 0 ? (row.total / totalPrincipal) * 100 : 0;
+                return {
+                  id: b,
+                  values: {
+                    bank: b,
+                    ...Object.fromEntries(memberCols.map((u) => [u, row[u] || 0])),
+                    total: row.total,
+                    pct,
+                  },
+                  cells: [
+                    <td key="bank" className="font-bold text-slate-900 whitespace-nowrap">
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 text-xs font-black mr-2 font-mono">
+                        {b}
+                      </span>
+                      <span className="text-xs text-slate-700">{bankLabel(b)}</span>
+                    </td>,
+                    ...memberCols.map((u) => (
+                      <td key={u} className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
+                        {(row[u] || 0) > 0 ? formatAmount(row[u], "HKD") : "—"}
+                      </td>
+                    )),
+                    <td
+                      key="total"
+                      className="text-right font-bold text-slate-950 font-mono text-xs bg-slate-50 whitespace-nowrap"
+                    >
+                      {formatAmount(row.total, "HKD")}
+                    </td>,
+                    <td key="pct" className="text-right font-semibold text-slate-600 text-xs whitespace-nowrap">
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-teal-50 text-teal-800">
+                        {pct.toFixed(1)}%
+                      </span>
+                    </td>,
+                  ],
+                };
+              })}
+              footer={
+                <tr className="bg-slate-100 font-black text-slate-950 border-t-2 border-slate-300">
+                  <td>{t("overview.grandTotal")}</td>
+                  {memberCols.map((u) => (
                     <td key={u} className="text-right font-mono text-xs whitespace-nowrap">
                       {formatAmount(userTotals[u] || 0, "HKD")}
                     </td>
                   ))}
-                <td className="text-right font-mono text-xs bg-teal-50 text-teal-950 whitespace-nowrap">
-                  {formatAmount(totalPrincipal, "HKD")}
-                </td>
-                <td className="text-right text-xs whitespace-nowrap">100.0%</td>
-                {!multiMember && (
-                  <td className="text-right font-mono text-xs text-emerald-800 whitespace-nowrap">
-                    +{formatAmount(totalActiveInterest, "HKD")}
+                  <td className="text-right font-mono text-xs bg-teal-50 text-teal-950 whitespace-nowrap">
+                    {formatAmount(totalPrincipal, "HKD")}
                   </td>
-                )}
-              </tr>
-            }
-          />
-        </div>
+                  <td className="text-right text-xs whitespace-nowrap">100.0%</td>
+                </tr>
+              }
+            />
+          </div>
+        )}
       </section>
 
       {/* Admin only: interest by member × bank (not repeated on member cards) */}
