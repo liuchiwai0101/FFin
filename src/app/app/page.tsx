@@ -281,7 +281,9 @@ export default function OverviewPage() {
       )}
 
       {/* Bank distribution — individuals: banks as column headers; admin: banks as rows */}
-      <section className="card shadow-sm overflow-hidden">
+      <section
+        className={`card shadow-sm overflow-hidden${!showMemberColumns ? " w-max max-w-full" : ""}`}
+      >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-base font-bold text-slate-900">{t("overview.bankMatrixTitle")}</h2>
