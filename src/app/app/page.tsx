@@ -71,23 +71,6 @@ export default function OverviewPage() {
     return t("overview.productTimeDeposit");
   }
 
-  // Total metrics
-  const totalPrincipal = activeRecords.reduce((sum, r) => sum + r.amount, 0);
-  const userPrincipal = activeRecords
-    .filter((r) => r.ownerName === viewer.ownerKey)
-    .reduce((sum, r) => sum + r.amount, 0);
-  const totalActiveInterest = activeRecords.reduce((sum, r) => sum + (r.interest || 0), 0);
-  const totalHistoryInterest = historyRecords.reduce((sum, r) => sum + (r.interest || 0), 0);
-
-  // Active yield calculation
-  const weightedRateSum = activeRecords.reduce((sum, r) => sum + r.amount * (r.rate || 0), 0);
-  const weightedAvgRate = totalPrincipal > 0 ? weightedRateSum / totalPrincipal : 0;
-
-  // Unique Users & Banks
-  const users = admin ? ownerNamesFromStore(store) : [viewer.ownerKey];
-  const banks = ["SC", "HS", "HSBC", "ICBC", "BOC"];
-
-  // Normalize bank name for aggregation
   function normalizeBank(b: string) {
     if (b.includes("HSBC") || b.includes("MA HSBC")) return "HSBC";
     if (b.includes("SC")) return "SC";
@@ -97,14 +80,34 @@ export default function OverviewPage() {
     return b;
   }
 
-  // 1. Bank Distribution Matrix: Bank x User -> Amount
+  function interestBankLabel(code: string) {
+    if (code === "SC") return "SC";
+    if (code === "HS") return "HS";
+    if (code === "HSBC") return "HSBC";
+    if (code === "ICBC") return "ICBC";
+    return "BOC";
+  }
+
+  const totalPrincipal = activeRecords.reduce((sum, r) => sum + r.amount, 0);
+  const userPrincipal = activeRecords
+    .filter((r) => r.ownerName === viewer.ownerKey)
+    .reduce((sum, r) => sum + r.amount, 0);
+  const totalActiveInterest = activeRecords.reduce((sum, r) => sum + (r.interest || 0), 0);
+  const totalHistoryInterest = historyRecords.reduce((sum, r) => sum + (r.interest || 0), 0);
+  const weightedRateSum = activeRecords.reduce((sum, r) => sum + r.amount * (r.rate || 0), 0);
+  const weightedAvgRate = totalPrincipal > 0 ? weightedRateSum / totalPrincipal : 0;
+
+  const users = admin ? ownerNamesFromStore(store) : [viewer.ownerKey];
+  const banks = ["SC", "HS", "HSBC", "ICBC", "BOC"];
+  const multiMember = admin && users.length > 1;
+
   const bankUserMatrix: Record<string, Record<string, number>> = {};
+  const bankActiveInterest: Record<string, number> = {};
   const userTotals = initOwnerTotals(users);
-  const userCurrentInterest = initOwnerTotals(users);
-  const userHistoryInterest = initOwnerTotals(users);
 
   banks.forEach((b) => {
     bankUserMatrix[b] = { ...initOwnerTotals(users), total: 0 };
+    bankActiveInterest[b] = 0;
   });
 
   activeRecords.forEach((r) => {
@@ -117,15 +120,8 @@ export default function OverviewPage() {
     if (userTotals[u] !== undefined) {
       userTotals[u] += r.amount;
     }
-    if (userCurrentInterest[u] !== undefined) {
-      userCurrentInterest[u] += r.interest || 0;
-    }
-  });
-
-  historyRecords.forEach((r) => {
-    const u = r.ownerName;
-    if (userHistoryInterest[u] !== undefined) {
-      userHistoryInterest[u] += r.interest || 0;
+    if (bankActiveInterest[b] !== undefined) {
+      bankActiveInterest[b] += r.interest || 0;
     }
   });
 
@@ -133,7 +129,6 @@ export default function OverviewPage() {
     admin ? bankUserMatrix[b].total > 0 : (bankUserMatrix[b][viewer.ownerKey] || 0) > 0,
   );
 
-  // 2. Interest Matrix: User x Bank -> Interest
   const userInterestMatrix: Record<string, Record<string, number>> = {};
   const bankInterestTotals: Record<string, number> = { BOC: 0, HS: 0, SC: 0, HSBC: 0, ICBC: 0, total: 0 };
 
@@ -141,8 +136,7 @@ export default function OverviewPage() {
     userInterestMatrix[u] = { BOC: 0, HS: 0, SC: 0, HSBC: 0, ICBC: 0, total: 0 };
   });
 
-  const allRecords = [...activeRecords, ...historyRecords];
-  allRecords.forEach((r) => {
+  [...activeRecords, ...historyRecords].forEach((r) => {
     const b = normalizeBank(r.bank);
     const u = r.ownerName;
     const interest = r.interest || 0;
@@ -156,11 +150,9 @@ export default function OverviewPage() {
     }
   });
 
-  // 3. Product Breakdown
   const productTotals: Record<string, { amount: number; count: number; interest: number }> = {};
   activeRecords.forEach((r) => {
     const group = productGroupLabel(r.product);
-
     if (!productTotals[group]) productTotals[group] = { amount: 0, count: 0, interest: 0 };
     productTotals[group].amount += r.amount;
     productTotals[group].count += 1;
@@ -169,39 +161,31 @@ export default function OverviewPage() {
 
   const memberCols = users.filter((u) => users.length === 1 || (userTotals[u] || 0) > 0);
   const showMemberColumns = memberCols.length > 1;
-  const visibleUserCards = users.filter(
-    (u) =>
-      users.length === 1 ||
-      (userTotals[u] || 0) > 0 ||
-      (userCurrentInterest[u] || 0) > 0 ||
-      (userHistoryInterest[u] || 0) > 0,
-  );
+  const visibleMembers = memberCols.filter((u) => (userTotals[u] || 0) > 0 || users.length === 1);
   const interestBanks = (["BOC", "HS", "SC", "HSBC", "ICBC"] as const).filter(
     (b) => (bankInterestTotals[b] || 0) > 0,
   );
   const productEntries = Object.entries(productTotals).sort((a, b) => b[1].amount - a[1].amount);
 
-  function interestBankLabel(code: string) {
-    if (code === "SC") return "SC (渣打)";
-    if (code === "HS") return "HS (恒生)";
-    if (code === "HSBC") return "HSBC (匯豐)";
-    if (code === "ICBC") return "ICBC (工銀)";
-    return "BOC (中銀)";
-  }
-
   return (
     <div className="space-y-5 sm:space-y-6">
-      {/* Page Header */}
       <div className="page-header border-b border-slate-200/80 pb-3 sm:pb-4">
         <div className="min-w-0 flex-1">
-          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-teal-700">{t("overview.eyebrow")}</span>
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-teal-700">
+            {multiMember ? t("overview.eyebrowAdmin") : t("overview.eyebrowMember")}
+          </span>
           <h1 className="text-lg font-black tracking-tight text-slate-900 sm:text-2xl leading-tight">
-            {t("overview.title")}
+            {multiMember ? t("overview.titleAdmin") : t("overview.titleMember")}
           </h1>
-          <p className="mt-0.5 sm:mt-1 text-[11px] sm:text-sm text-slate-500 leading-snug">{t("overview.subtitle")}</p>
+          <p className="mt-0.5 sm:mt-1 text-[11px] sm:text-sm text-slate-500 leading-snug">
+            {multiMember ? t("overview.subtitleAdmin") : t("overview.subtitleMember")}
+          </p>
         </div>
         <div className="page-header-actions">
-          <Link className="button-secondary text-[11px] sm:text-xs flex-1 sm:flex-none justify-center" href="/app/current">
+          <Link
+            className="button-secondary text-[11px] sm:text-xs flex-1 sm:flex-none justify-center"
+            href="/app/current"
+          >
             {t("overview.viewCurrent")}
           </Link>
           {admin && (
@@ -212,140 +196,105 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Top Level KPI Cards */}
+      {/* KPIs — single source of truth for totals */}
       <section className="kpi-grid">
-        {/* Card 1: Total Principal */}
         <div className="card bg-gradient-to-br from-white to-teal-50/40 border-teal-100/80 shadow-sm">
-          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">{t("overview.kpiTotalPrincipal")}</p>
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">
+            {t("overview.kpiTotalPrincipal")}
+          </p>
           <p className="kpi-value mt-1.5 text-teal-950 font-mono">
             {formatAmount(totalPrincipal, "HKD")}
           </p>
-          <p className="mt-1 text-[11px] text-teal-700 font-semibold">{t("overview.activeHoldings", { count: activeRecords.length })}</p>
+          <p className="mt-1 text-[11px] text-teal-700 font-semibold">
+            {t("overview.activeHoldings", { count: activeRecords.length })}
+          </p>
         </div>
 
-        {/* Card 2: Expected Active Interest */}
         <div className="card bg-gradient-to-br from-white to-emerald-50/40 border-emerald-100/80 shadow-sm">
-          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">{t("overview.kpiActiveInterest")}</p>
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">
+            {t("overview.kpiActiveInterest")}
+          </p>
           <p className="kpi-value mt-1.5 text-emerald-700 font-mono">
             +{formatAmount(totalActiveInterest, "HKD")}
           </p>
           <p className="mt-1 text-[11px] text-slate-500">{t("overview.kpiActiveInterestNote")}</p>
         </div>
 
-        {/* Card 3: Weighted Avg Yield */}
         <div className="card shadow-sm">
-          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">{t("overview.kpiWeightedYield")}</p>
-          <p className="kpi-value mt-1.5 text-slate-900 font-mono">
-            {formatRate(weightedAvgRate)}
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">
+            {t("overview.kpiWeightedYield")}
           </p>
+          <p className="kpi-value mt-1.5 text-slate-900 font-mono">{formatRate(weightedAvgRate)}</p>
           <p className="mt-1 text-[11px] text-slate-500">{t("overview.kpiWeightedYieldNote")}</p>
         </div>
 
-        {/* Card 4: Historical Interest */}
         <div className="card bg-gradient-to-br from-white to-blue-50/40 border-blue-100/80 shadow-sm">
-          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">{t("overview.kpiHistoryInterest")}</p>
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 leading-snug">
+            {t("overview.kpiHistoryInterest")}
+          </p>
           <p className="kpi-value mt-1.5 text-blue-900 font-mono">
             +{formatAmount(totalHistoryInterest, "HKD")}
           </p>
-          <p className="mt-1 text-[11px] text-blue-700 font-semibold">{t("overview.maturedTerms", { count: historyRecords.length })}</p>
+          <p className="mt-1 text-[11px] text-blue-700 font-semibold">
+            {t("overview.maturedTerms", { count: historyRecords.length })}
+          </p>
         </div>
       </section>
 
-      {/* User Summary Cards */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            {t("overview.userBreakdown")}
-          </h2>
-          <span className="text-xs text-slate-500 font-medium font-mono">
-            {t("overview.total")}: {formatAmount(totalPrincipal, "HKD")}
-          </span>
-        </div>
-        <div className={visibleUserCards.length === 1 ? "" : "fit-card-grid"}>
-          {visibleUserCards.map((u) => {
-            const userAmount = userTotals[u] || 0;
-            const pct = totalPrincipal > 0 ? (userAmount / totalPrincipal) * 100 : 0;
-            const currentInterest = userCurrentInterest[u] || 0;
-            const historyInterest = userHistoryInterest[u] || 0;
-            if (visibleUserCards.length === 1) {
+      {/* Admin only: member principal comparison (no interest — that lives in the interest table) */}
+      {multiMember && (
+        <section>
+          <div className="mb-3">
+            <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              {t("overview.userBreakdown")}
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500">{t("overview.userBreakdownDesc")}</p>
+          </div>
+          <div className="fit-card-grid">
+            {visibleMembers.map((u) => {
+              const userAmount = userTotals[u] || 0;
+              const pct = totalPrincipal > 0 ? (userAmount / totalPrincipal) * 100 : 0;
               return (
-                <div key={u} className="card user-summary-card border-slate-200 shadow-sm">
-                  <div className="user-summary-identity">
-                    <span className="h-8 w-8 rounded-full bg-teal-100 text-teal-800 font-black text-xs flex items-center justify-center">
-                      {u.slice(0, 2)}
+                <div
+                  key={u}
+                  className="card flex flex-col justify-between border-slate-200 hover:border-teal-300 transition-all p-4 shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="h-7 w-7 shrink-0 rounded-full bg-teal-100 text-teal-800 font-black text-xs flex items-center justify-center">
+                        {u.slice(0, 2)}
+                      </span>
+                      <h3 className="text-sm font-black text-slate-900 truncate">{u}</h3>
+                    </div>
+                    <span className="badge text-[10px] font-bold shrink-0">
+                      {t("overview.share", { pct: pct.toFixed(1) })}
                     </span>
-                    <div>
-                      <h3 className="text-sm font-black text-slate-900">{u}</h3>
-                      <span className="badge text-[10px] font-bold">{t("overview.share", { pct: pct.toFixed(1) })}</span>
-                    </div>
                   </div>
-                  <div className="user-summary-metrics">
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.kpiTotalPrincipal")}</p>
-                      <p className="user-stat-value mt-0.5 text-slate-950 font-mono">{formatAmount(userAmount, "HKD")}</p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.interestCurrent")}</p>
-                      <p className="user-stat-value mt-0.5 text-emerald-700 font-mono">+{formatAmount(currentInterest, "HKD")}</p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t("overview.interestHistory")}</p>
-                      <p className="user-stat-value mt-0.5 text-blue-700 font-mono">+{formatAmount(historyInterest, "HKD")}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-            return (
-              <div
-                key={u}
-                className="card flex flex-col justify-between border-slate-200 hover:border-teal-300 transition-all p-4 shadow-sm"
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="h-6 w-6 rounded-full bg-teal-100 text-teal-800 font-black text-xs flex items-center justify-center">
-                      {u.slice(0, 2)}
-                    </span>
-                    <span className="badge text-[10px] font-bold">{t("overview.share", { pct: pct.toFixed(1) })}</span>
-                  </div>
-                  <h3 className="mt-2 text-sm font-black text-slate-900">{u}</h3>
-                  <p className="user-stat-value mt-1 text-slate-950 font-mono">
+                  <p className="user-stat-value mt-3 text-slate-950 font-mono">
                     {formatAmount(userAmount, "HKD")}
                   </p>
                 </div>
-                <div className="mt-3 pt-2 border-t border-slate-100 space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 text-[11px]">{t("overview.interestCurrent")}:</span>
-                    <span className="font-bold text-emerald-700 font-mono text-[11px]">
-                      +{formatAmount(currentInterest, "HKD")}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 text-[11px]">{t("overview.interestHistory")}:</span>
-                    <span className="font-bold text-blue-700 font-mono text-[11px]">
-                      +{formatAmount(historyInterest, "HKD")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
-      {/* Table 1: Bank Distribution Matrix */}
+      {/* Bank distribution — for members also show expected interest so we can skip a second interest table */}
       <section className="card shadow-sm overflow-hidden">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-base font-bold text-slate-900">{t("overview.bankMatrixTitle")}</h2>
-            <p className="text-xs text-slate-500">{t("overview.bankMatrixDesc")}</p>
+            <p className="text-xs text-slate-500">
+              {multiMember ? t("overview.bankMatrixDescAdmin") : t("overview.bankMatrixDescMember")}
+            </p>
           </div>
           <Link className="text-xs font-semibold text-teal-700 hover:underline" href="/app/current">
             {t("overview.viewDetails")}
           </Link>
         </div>
 
-        <div className={`overflow-x-auto${!showMemberColumns ? " max-w-xl" : ""}`}>
+        <div className={`overflow-x-auto${!showMemberColumns ? " max-w-2xl" : ""}`}>
           <SortableTable
             className={!showMemberColumns ? "compact-matrix" : undefined}
             defaultSortKey="total"
@@ -354,7 +303,7 @@ export default function OverviewPage() {
               {
                 key: "bank",
                 label: t("overview.bank"),
-                className: showMemberColumns ? "w-40" : "whitespace-nowrap",
+                className: showMemberColumns ? "w-36" : "whitespace-nowrap",
               },
               ...(showMemberColumns
                 ? memberCols.map((u) => ({
@@ -367,23 +316,30 @@ export default function OverviewPage() {
               {
                 key: "total",
                 label: t("overview.totalPrincipal"),
-                className: showMemberColumns
-                  ? "text-right font-bold text-slate-900 bg-slate-100/70"
-                  : "text-right font-bold text-slate-900 bg-slate-100/70 whitespace-nowrap",
+                className: "text-right font-bold text-slate-900 bg-slate-100/70 whitespace-nowrap",
                 type: "number",
               },
               {
                 key: "pct",
                 label: t("overview.pctShare"),
-                className: showMemberColumns
-                  ? "text-right w-20 font-bold text-slate-900"
-                  : "text-right font-bold text-slate-900 whitespace-nowrap",
+                className: "text-right font-bold text-slate-900 whitespace-nowrap",
                 type: "number",
               },
+              ...(!multiMember
+                ? [
+                    {
+                      key: "interest",
+                      label: t("overview.expectedInterest"),
+                      className: "text-right font-bold text-emerald-800 whitespace-nowrap",
+                      type: "number" as const,
+                    },
+                  ]
+                : []),
             ]}
             rows={activeBanks.map((b) => {
               const row = bankUserMatrix[b];
               const pct = totalPrincipal > 0 ? (row.total / totalPrincipal) * 100 : 0;
+              const interest = bankActiveInterest[b] || 0;
               return {
                 id: b,
                 values: {
@@ -391,6 +347,7 @@ export default function OverviewPage() {
                   ...Object.fromEntries(memberCols.map((u) => [u, row[u] || 0])),
                   total: row.total,
                   pct,
+                  interest,
                 },
                 cells: [
                   <td key="bank" className="font-bold text-slate-900 whitespace-nowrap">
@@ -406,7 +363,10 @@ export default function OverviewPage() {
                         </td>
                       ))
                     : []),
-                  <td key="total" className="text-right font-bold text-slate-950 font-mono text-xs bg-slate-50 whitespace-nowrap">
+                  <td
+                    key="total"
+                    className="text-right font-bold text-slate-950 font-mono text-xs bg-slate-50 whitespace-nowrap"
+                  >
                     {formatAmount(row.total, "HKD")}
                   </td>,
                   <td key="pct" className="text-right font-semibold text-slate-600 text-xs whitespace-nowrap">
@@ -414,6 +374,16 @@ export default function OverviewPage() {
                       {pct.toFixed(1)}%
                     </span>
                   </td>,
+                  ...(!multiMember
+                    ? [
+                        <td
+                          key="interest"
+                          className="text-right font-semibold text-emerald-700 font-mono text-xs whitespace-nowrap"
+                        >
+                          {interest > 0 ? `+${formatAmount(interest, "HKD")}` : "—"}
+                        </td>,
+                      ]
+                    : []),
                 ],
               };
             })}
@@ -430,90 +400,100 @@ export default function OverviewPage() {
                   {formatAmount(totalPrincipal, "HKD")}
                 </td>
                 <td className="text-right text-xs whitespace-nowrap">100.0%</td>
-              </tr>
-            }
-          />
-        </div>
-      </section>
-
-      {/* Table 2: User Interest Breakdown Matrix */}
-      <section className="card shadow-sm overflow-hidden">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="text-base font-bold text-slate-900">{t("overview.interestMatrixTitle")}</h2>
-            <p className="text-xs text-slate-500">{t("overview.interestMatrixDesc")}</p>
-          </div>
-          <Link className="text-xs font-semibold text-teal-700 hover:underline" href="/app/history">
-            {t("overview.viewHistory")}
-          </Link>
-        </div>
-
-        <div className="overflow-x-auto">
-          <SortableTable
-            defaultSortKey="total"
-            defaultSortDir="desc"
-            columns={[
-              { key: "member", label: t("overview.member"), className: "w-28" },
-              ...interestBanks.map((b) => ({
-                key: b,
-                label: interestBankLabel(b),
-                className: "text-right",
-                type: "number" as const,
-              })),
-              {
-                key: "total",
-                label: t("overview.totalInterest"),
-                className: "text-right font-bold text-slate-900 bg-emerald-50/50",
-                type: "number",
-              },
-            ]}
-            rows={visibleUserCards.map((u) => {
-              const row = userInterestMatrix[u];
-              return {
-                id: u,
-                values: {
-                  member: u,
-                  ...Object.fromEntries(interestBanks.map((b) => [b, row[b] || 0])),
-                  total: row.total,
-                },
-                cells: [
-                  <td key="member" className="font-bold text-slate-900 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-6 w-6 rounded-full bg-slate-100 text-slate-800 text-[11px] font-bold flex items-center justify-center">
-                        {u.slice(0, 2)}
-                      </span>
-                      {u}
-                    </span>
-                  </td>,
-                  ...interestBanks.map((b) => (
-                    <td key={b} className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
-                      {(row[b] || 0) > 0 ? `+${formatAmount(row[b], "HKD")}` : "—"}
-                    </td>
-                  )),
-                  <td key="total" className="text-right font-bold text-emerald-700 font-mono text-xs bg-emerald-50/30 whitespace-nowrap">
-                    +{formatAmount(row.total, "HKD")}
-                  </td>,
-                ],
-              };
-            })}
-            footer={
-              <tr className="bg-slate-100 font-black text-slate-950 border-t-2 border-slate-300">
-                <td>{t("overview.grandTotal")}</td>
-                {interestBanks.map((b) => (
-                  <td key={b} className="text-right font-mono text-xs whitespace-nowrap">
-                    +{formatAmount(bankInterestTotals[b] || 0, "HKD")}
+                {!multiMember && (
+                  <td className="text-right font-mono text-xs text-emerald-800 whitespace-nowrap">
+                    +{formatAmount(totalActiveInterest, "HKD")}
                   </td>
-                ))}
-                <td className="text-right font-mono text-xs bg-emerald-100 text-emerald-950 whitespace-nowrap">
-                  +{formatAmount(bankInterestTotals.total, "HKD")}
-                </td>
+                )}
               </tr>
             }
           />
         </div>
       </section>
 
-      {/* Product Type Breakdown */}
+      {/* Admin only: interest by member × bank (not repeated on member cards) */}
+      {multiMember && (
+        <section className="card shadow-sm overflow-hidden">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">{t("overview.interestMatrixTitle")}</h2>
+              <p className="text-xs text-slate-500">{t("overview.interestMatrixDesc")}</p>
+            </div>
+            <Link className="text-xs font-semibold text-teal-700 hover:underline" href="/app/history">
+              {t("overview.viewHistory")}
+            </Link>
+          </div>
+
+          <div className="overflow-x-auto">
+            <SortableTable
+              defaultSortKey="total"
+              defaultSortDir="desc"
+              columns={[
+                { key: "member", label: t("overview.member"), className: "w-28" },
+                ...interestBanks.map((b) => ({
+                  key: b,
+                  label: interestBankLabel(b),
+                  className: "text-right",
+                  type: "number" as const,
+                })),
+                {
+                  key: "total",
+                  label: t("overview.totalInterest"),
+                  className: "text-right font-bold text-slate-900 bg-emerald-50/50",
+                  type: "number",
+                },
+              ]}
+              rows={visibleMembers.map((u) => {
+                const row = userInterestMatrix[u];
+                return {
+                  id: u,
+                  values: {
+                    member: u,
+                    ...Object.fromEntries(interestBanks.map((b) => [b, row[b] || 0])),
+                    total: row.total,
+                  },
+                  cells: [
+                    <td key="member" className="font-bold text-slate-900 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-6 w-6 rounded-full bg-slate-100 text-slate-800 text-[11px] font-bold flex items-center justify-center">
+                          {u.slice(0, 2)}
+                        </span>
+                        {u}
+                      </span>
+                    </td>,
+                    ...interestBanks.map((b) => (
+                      <td key={b} className="text-right text-slate-700 font-mono text-xs whitespace-nowrap">
+                        {(row[b] || 0) > 0 ? `+${formatAmount(row[b], "HKD")}` : "—"}
+                      </td>
+                    )),
+                    <td
+                      key="total"
+                      className="text-right font-bold text-emerald-700 font-mono text-xs bg-emerald-50/30 whitespace-nowrap"
+                    >
+                      +{formatAmount(row.total, "HKD")}
+                    </td>,
+                  ],
+                };
+              })}
+              footer={
+                <tr className="bg-slate-100 font-black text-slate-950 border-t-2 border-slate-300">
+                  <td>{t("overview.grandTotal")}</td>
+                  {interestBanks.map((b) => (
+                    <td key={b} className="text-right font-mono text-xs whitespace-nowrap">
+                      +{formatAmount(bankInterestTotals[b] || 0, "HKD")}
+                    </td>
+                  ))}
+                  <td className="text-right font-mono text-xs bg-emerald-100 text-emerald-950 whitespace-nowrap">
+                    +{formatAmount(bankInterestTotals.total, "HKD")}
+                  </td>
+                </tr>
+              }
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Product mix — allocation cut, not a repeat of bank totals */}
       <section className="card shadow-sm">
         <div className="mb-4">
           <h2 className="text-base font-bold text-slate-900">{t("overview.productTypesTitle")}</h2>
@@ -523,7 +503,10 @@ export default function OverviewPage() {
           {productEntries.map(([name, data]) => {
             const pct = totalPrincipal > 0 ? (data.amount / totalPrincipal) * 100 : 0;
             return (
-              <div key={name} className="border border-slate-200/80 rounded-lg p-3.5 bg-slate-50/50 flex flex-col justify-between">
+              <div
+                key={name}
+                className="border border-slate-200/80 rounded-lg p-3.5 bg-slate-50/50 flex flex-col justify-between"
+              >
                 <div>
                   <div className="flex items-center justify-between text-xs mb-1 gap-2">
                     <span className="font-bold text-slate-900 truncate">{name}</span>
