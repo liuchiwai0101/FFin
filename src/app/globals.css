@@ -445,6 +445,48 @@ table.compact-matrix td:not(:first-child) {
   }
 }
 
+/* Individual overview: banks as column headers, sized to content. */
+table.bank-header-matrix {
+  width: auto;
+  max-width: 100%;
+  table-layout: auto;
+}
+
+table.bank-header-matrix th,
+table.bank-header-matrix td {
+  padding: 0.5rem 0.75rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+table.bank-header-matrix th:first-child,
+table.bank-header-matrix td:first-child {
+  padding-right: 1.25rem;
+  text-align: left;
+}
+
+table.bank-header-matrix th:not(:first-child),
+table.bank-header-matrix td:not(:first-child) {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+table.bank-header-matrix tbody tr:last-child td {
+  border-bottom: none;
+}
+
+@media (min-width: 640px) {
+  table.bank-header-matrix th,
+  table.bank-header-matrix td {
+    padding: 0.55rem 0.9rem;
+  }
+
+  table.bank-header-matrix th:first-child,
+  table.bank-header-matrix td:first-child {
+    padding-right: 1.5rem;
+  }
+}
+
 /* Product mix cards — dense tiles that don't stretch across empty width. */
 .product-mix-grid {
   display: flex;
